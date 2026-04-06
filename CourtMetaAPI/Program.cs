@@ -1,5 +1,11 @@
 var builder = WebApplication.CreateBuilder(args);
 
+// Allows the app to run as a Windows Service (auto-sets content root to exe directory)
+builder.Host.UseWindowsService(options =>
+{
+    options.ServiceName = "Court Meta API";
+});
+
 // CORS: allow any origin but only the custom extension header triggers access.
 // The actual gate is the middleware below — CORS just needs to be permissive
 // enough not to block the extension's preflight.

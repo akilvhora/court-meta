@@ -14,3 +14,6 @@ CourtMetaAPI/wwwroot/court-meta-extension.zip
 
 # Local notes
 input.txt
+
+# Extension private key — store in Jenkins as Secret File (ID: court-meta-extension-key)
+installer/extension-private-key.pem
