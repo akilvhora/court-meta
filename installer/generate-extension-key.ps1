@@ -32,11 +32,11 @@ $privKeyPath = Join-Path $outDir "extension-private-key.pem"
 $pubDerPath  = Join-Path $outDir "extension-public.der"
 
 # ── Generate 2048-bit RSA private key (PKCS#8 PEM) ───────────────────────────
-& $openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out $privKeyPath 2>&1 | Out-Null
+& $openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out $privKeyPath 2>$null
 if ($LASTEXITCODE -ne 0) { throw "openssl genpkey failed" }
 
 # ── Export SubjectPublicKeyInfo in DER format ─────────────────────────────────
-& $openssl pkey -in $privKeyPath -pubout -outform DER -out $pubDerPath 2>&1 | Out-Null
+& $openssl pkey -in $privKeyPath -pubout -outform DER -out $pubDerPath 2>$null
 if ($LASTEXITCODE -ne 0) { throw "openssl pkey export failed" }
 
 $spki = [System.IO.File]::ReadAllBytes($pubDerPath)
