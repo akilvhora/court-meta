@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Court Meta</title>
+  <style>
+    body {
+      width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      margin: 0;
+      padding: 0;
+      background: #f8f9fa;
+      color: #212529;
+    }
+    .header {
+      background: #0d6efd;
+      color: white;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .header .badge {
+      font-size: 10px;
+      background: rgba(255,255,255,0.25);
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+    .content {
+      padding: 14px 16px;
+    }
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #adb5bd;
+      flex-shrink: 0;
+    }
+    .dot.green { background: #198754; }
+    .dot.red { background: #dc3545; }
+    .status-label { font-size: 13px; color: #495057; }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6c757d;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 13px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus {
+      border-color: #0d6efd;
+    }
+    button {
+      width: 100%;
+      padding: 9px;
+      background: #0d6efd;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s;
+    }
+    button:hover { background: #0b5ed7; }
+    button:disabled { background: #adb5bd; cursor: not-allowed; }
+    #result {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: none;
+      word-break: break-all;
+    }
+    #result.success {
+      background: #d1e7dd;
+      border: 1px solid #badbcc;
+      color: #0f5132;
+      display: block;
+    }
+    #result.error {
+      background: #f8d7da;
+      border: 1px solid #f5c2c7;
+      color: #842029;
+      display: block;
+    }
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Court Meta</h1>
+    </div>
+    <div class="badge">v1.0</div>
+  </div>
+
+  <div class="content">
+    <div class="status-row">
+      <div class="dot" id="apiDot"></div>
+      <span class="status-label" id="apiStatus">Checking backend...</span>
+    </div>
+
+    <div class="section-label">Quick CNR Search</div>
+    <label for="cnrInput">CNR Number</label>
+    <input type="text" id="cnrInput" placeholder="e.g. MHPU010001232022" maxlength="30" />
+    <button id="searchBtn" disabled>Search</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

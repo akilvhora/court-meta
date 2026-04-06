@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Court Meta – eCourts Search</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <div>
+      <h1>Court Meta</h1>
+      <div class="subtitle">eCourts India – Case Search Portal</div>
+    </div>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-indicator checking" id="extIndicator"></div>
+    <span id="extStatus">Checking for Court Meta extension…</span>
+  </div>
+
+  <!-- ── Install banner (hidden once extension connects) ── -->
+  <div id="installBanner" class="install-banner">
+    <div class="install-banner-content">
+      <div class="install-icon">🔌</div>
+      <div class="install-text">
+        <strong>Court Meta extension not installed</strong>
+        <span>The extension is required to fetch eCourts data. Install it in 3 steps:</span>
+        <ol>
+          <li>Download and unzip the extension: <a href="/court-meta-extension.zip" download class="install-link">court-meta-extension.zip</a></li>
+          <li>Open Chrome → <code>chrome://extensions</code> → enable <strong>Developer mode</strong></li>
+          <li>Click <strong>Load unpacked</strong> and select the unzipped folder, then reload this page</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="cnr">CNR Search</button>
+      <button class="tab-btn" data-tab="browser">Court Browser</button>
+    </div>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TAB 1: CNR Search                 -->
+    <!-- ══════════════════════════════════ -->
+    <div class="card tab-panel active" id="tab-cnr">
+      <div class="form-row">
+        <div class="form-group" style="max-width:420px;">
+          <label for="cnrNumber">CNR Number</label>
+          <input type="text" id="cnrNumber" placeholder="e.g. MHPU010001232022" maxlength="30" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="cnrSearchBtn">Search</button>
+
+      <div class="result-section">
+        <div class="alert alert-error" id="cnrError"></div>
+
+        <div class="cnr-card" id="cnrCard">
+          <h3 id="cnrCardTitle">Case Details</h3>
+          <div class="cnr-field"><span class="cnr-label">CNR Number</span><span class="cnr-value" id="cnrCino">–</span></div>
+          <div class="cnr-field"><span class="cnr-label">Case Type</span><span class="cnr-value" id="cnrType">–</span></div>
+          <div class="cnr-field"><span class="cnr-label">Case Number</span><span class="cnr-value" id="cnrCaseNumber">–</span></div>
+        </div>
+
+        <div id="cnrHistoryWrap" style="display:none;" class="history-table">
+          <h3>Case History</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Date</th><th>Purpose</th><th>Judge</th><th>Business</th><th>Next Date</th><th>Next Purpose</th></tr></thead>
+              <tbody id="cnrHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="cnrRawWrap" style="display:none;margin-top:16px;">
+          <div class="section-label">Raw Response</div>
+          <pre id="cnrRaw" style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:6px;padding:14px;font-size:12px;overflow-x:auto;white-space:pre-wrap;color:#2d3748;margin-top:8px;"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TAB 2: Court Browser             -->
+    <!-- Cascading: State→District→Complex→Courts -->
+    <!-- ══════════════════════════════════ -->
+    <div class="card tab-panel" id="tab-browser">
+
+      <div class="form-row">
+
+        <!-- State -->
+        <div class="form-group">
+          <label for="selState">State</label>
+          <select id="selState">
+            <option value="">— Loading states… —</option>
+          </select>
+          <div class="field-error" id="stateErr"></div>
+        </div>
+
+        <!-- District -->
+        <div class="form-group">
+          <label for="selDistrict">District</label>
+          <select id="selDistrict" disabled>
+            <option value="">— Select a state first —</option>
+          </select>
+          <div class="field-error" id="districtErr"></div>
+        </div>
+
+        <!-- Complex -->
+        <div class="form-group">
+          <label for="selComplex">Court Complex</label>
+          <select id="selComplex" disabled>
+            <option value="">— Select a district first —</option>
+          </select>
+          <div class="field-error" id="complexErr"></div>
+        </div>
+
+      </div>
+
+      <!-- Court Names -->
+      <div id="courtsSection" style="display:none; margin-top:20px;">
+        <div class="section-label">Courts in selected complex</div>
+        <div class="alert alert-error" id="courtsErr" style="margin-top:8px;"></div>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead><tr><th>#</th><th>Court Code</th><th>Court Name</th></tr></thead>
+            <tbody id="courtsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Loading spinner -->
+      <div id="browserLoading" style="display:none; padding:16px 0; color:#718096; font-size:13px;">
+        <span class="spinner dark"></span> Loading…
+      </div>
+
+    </div>
+
+  </div><!-- /container -->
+
+  <script src="court-meta.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>CourtMetaAPI</RootNamespace>
+    <AssemblyName>CourtMetaAPI</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Extension source files tracked by the project -->
+  <ItemGroup>
+    <ExtensionFiles Include="extension\**\*" />
+  </ItemGroup>
+
+  <!--
+    On every build:
+      1. Copy extension/* → wwwroot/extension/   (served as static files)
+      2. Zip  extension/* → wwwroot/court-meta-extension.zip  (download link)
+  -->
+  <Target Name="BundleExtension" BeforeTargets="Build">
+    <MakeDir Directories="$(MSBuildProjectDirectory)\wwwroot\extension" />
+    <Copy SourceFiles="@(ExtensionFiles)"
+          DestinationFiles="@(ExtensionFiles->'$(MSBuildProjectDirectory)\wwwroot\extension\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <ZipDirectory SourceDirectory="$(MSBuildProjectDirectory)\extension"
+                  DestinationFile="$(MSBuildProjectDirectory)\wwwroot\court-meta-extension.zip"
+                  Overwrite="true" />
+    <Message Text="Extension bundled → wwwroot/extension/ and wwwroot/court-meta-extension.zip" Importance="high" />
+  </Target>
+
+</Project>
