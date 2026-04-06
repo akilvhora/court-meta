@@ -10,7 +10,6 @@
     Prints the extension ID      → paste into installer/court-meta-setup.iss #define ExtensionID.
 #>
 
-$ErrorActionPreference = "Stop"
 $outDir = $PSScriptRoot
 
 # ── Locate openssl ────────────────────────────────────────────────────────────
@@ -32,12 +31,12 @@ $privKeyPath = Join-Path $outDir "extension-private-key.pem"
 $pubDerPath  = Join-Path $outDir "extension-public.der"
 
 # ── Generate 2048-bit RSA private key (PKCS#8 PEM) ───────────────────────────
-& $openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out $privKeyPath 2>$null
-if ($LASTEXITCODE -ne 0) { throw "openssl genpkey failed" }
+$null = & $openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out $privKeyPath 2>&1
+if ($LASTEXITCODE -ne 0) { throw "openssl genpkey failed (exit $LASTEXITCODE)" }
 
 # ── Export SubjectPublicKeyInfo in DER format ─────────────────────────────────
-& $openssl pkey -in $privKeyPath -pubout -outform DER -out $pubDerPath 2>$null
-if ($LASTEXITCODE -ne 0) { throw "openssl pkey export failed" }
+$null = & $openssl pkey -in $privKeyPath -pubout -outform DER -out $pubDerPath 2>&1
+if ($LASTEXITCODE -ne 0) { throw "openssl pkey export failed (exit $LASTEXITCODE)" }
 
 $spki = [System.IO.File]::ReadAllBytes($pubDerPath)
 Remove-Item $pubDerPath -Force

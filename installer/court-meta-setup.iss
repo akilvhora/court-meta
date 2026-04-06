@@ -2,9 +2,7 @@
 ; Built by Jenkins; ISCC passes /dExtensionID=<id> and /dVersionStr=<ver> on the command line.
 
 #ifndef ExtensionID
-  ; Placeholder — always overridden by Jenkins via /dExtensionID=...
-  ; Run installer\generate-extension-key.ps1 once to obtain the real value.
-  #define ExtensionID "aaaabbbbccccddddeeeeffffgggghhhh"
+  #define ExtensionID "hkkdncijcdoeohbiemlocjkeccgmclpj"
 #endif
 
 #ifndef VersionStr

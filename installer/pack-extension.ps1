@@ -15,8 +15,6 @@ param(
     [Parameter(Mandatory)][string]$OutputIdFile
 )
 
-$ErrorActionPreference = "Stop"
-
 # ── Locate openssl ────────────────────────────────────────────────────────────
 $openssl = Get-Command openssl -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 if (-not $openssl) {
@@ -43,12 +41,12 @@ try {
     $zipBytes = [System.IO.File]::ReadAllBytes($zipPath)
 
     # ── Export SubjectPublicKeyInfo (DER) ─────────────────────────────────────
-    & $openssl pkey -in $KeyFile -pubout -outform DER -out $derPath 2>$null
+    $null = & $openssl pkey -in $KeyFile -pubout -outform DER -out $derPath 2>&1
     if ($LASTEXITCODE -ne 0) { throw "openssl: failed to export public key" }
     $spki = [System.IO.File]::ReadAllBytes($derPath)
 
     # ── RSA-SHA1 sign the zip bytes ───────────────────────────────────────────
-    & $openssl dgst -sha1 -sign $KeyFile -out $sigPath $zipPath 2>$null
+    $null = & $openssl dgst -sha1 -sign $KeyFile -out $sigPath $zipPath 2>&1
     if ($LASTEXITCODE -ne 0) { throw "openssl: signing failed" }
     $signature = [System.IO.File]::ReadAllBytes($sigPath)
 
