@@ -73,7 +73,8 @@ try {
         [char]([byte][char]'a' + ($_ -band 0x0F))
     })
 
-    Set-Content -Path $OutputIdFile -Value $extId -Encoding UTF8 -NoNewline
+    # Write without BOM — PowerShell 5.1 UTF8 encoding adds a BOM which corrupts bat reads
+    [System.IO.File]::WriteAllText($OutputIdFile, $extId)
     Write-Host "Extension ID: $extId"
 }
 finally {

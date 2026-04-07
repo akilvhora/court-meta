@@ -62,19 +62,18 @@ pipeline {
         stage('Build Installer') {
             steps {
                 script {
-                    // Read the extension ID written by pack-extension.ps1
-                    def extId = bat(script: 'type CourtMetaAPI\\publish\\extension-id.txt', returnStdout: true).trim()
+                    // Use PowerShell to read the ID — avoids bat echo pollution and BOM issues
+                    def extId = bat(
+                        script: '@powershell -Command "(Get-Content CourtMetaAPI\\publish\\extension-id.txt -Raw).Trim()"',
+                        returnStdout: true
+                    ).trim()
                     def version = "1.0.${env.BUILD_NUMBER}"
 
                     echo "Extension ID : ${extId}"
                     echo "Version      : ${version}"
 
-                    // Compile the InnoSetup installer
-                    bat """
-                        "%ISCC%" /dExtensionID="${extId}" /dVersionStr="${version}" ^
-                                 /O"CourtMetaAPI\\publish" ^
-                                 installer\\court-meta-setup.iss
-                    """
+                    // Single-line invocation — no ^ continuation to misparse
+                    bat "\"${env.ISCC}\" /dExtensionID=\"${extId}\" /dVersionStr=\"${version}\" /O\"CourtMetaAPI\\publish\" installer\\court-meta-setup.iss"
                 }
             }
         }
