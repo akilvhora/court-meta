@@ -1,0 +1,87 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    environment {
+        PROJECT_DIR  = 'CourtMetaAPI'
+        CSProj       = 'CourtMetaAPI\\CourtMetaAPI.csproj'
+        CONFIGURATION = 'Release'
+        OUTPUT_DIR   = 'publish'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Tool Info') {
+            steps {
+                bat 'dotnet --info'
+            }
+        }
+
+        stage('Restore') {
+            steps {
+                bat 'dotnet restore %CSProj%'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat 'dotnet build %CSProj% -c %CONFIGURATION% --no-restore'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    // Run any test projects if present; do not fail if none exist
+                    def hasTests = bat(
+                        script: '@dir /b /s *Tests.csproj 2>nul | findstr /r ".*" >nul && echo YES || echo NO',
+                        returnStdout: true
+                    ).trim().endsWith('YES')
+                    if (hasTests) {
+                        bat 'dotnet test -c %CONFIGURATION% --no-build --logger "trx;LogFileName=test-results.trx"'
+                    } else {
+                        echo 'No test projects found — skipping test stage.'
+                    }
+                }
+            }
+        }
+
+        stage('Publish') {
+            steps {
+                bat 'dotnet publish %CSProj% -c %CONFIGURATION% -o %OUTPUT_DIR% --no-build'
+            }
+        }
+
+        stage('Bundle Extension') {
+            steps {
+                bat '''
+                    if exist %PROJECT_DIR%\\wwwroot\\court-meta-extension.zip (
+                        copy /Y %PROJECT_DIR%\\wwwroot\\court-meta-extension.zip %OUTPUT_DIR%\\court-meta-extension.zip
+                    )
+                '''
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'publish/**/*', fingerprint: true, allowEmptyArchive: false
+            }
+        }
+    }
+
+    post {
+        success { echo 'Court Meta CI pipeline completed successfully.' }
+        failure { echo 'Court Meta CI pipeline failed — check stage logs.' }
+        always  { echo "Build #${env.BUILD_NUMBER} finished with status ${currentBuild.currentResult}" }
+    }
+}

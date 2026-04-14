@@ -1,0 +1,70 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job">
+  <actions/>
+  <description>Court Meta CI Pipeline - builds the CourtMetaAPI (.NET 10) project, bundles the Chrome extension, runs tests if present, and archives publish artifacts.</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>BRANCH</name>
+          <description>Git branch to build</description>
+          <defaultValue>main</defaultValue>
+          <trim>true</trim>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps">
+    <script>pipeline {
+    agent any
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    environment {
+        PROJECT_DIR   = 'CourtMetaAPI'
+        CSProj        = 'CourtMetaAPI\\CourtMetaAPI.csproj'
+        CONFIGURATION = 'Release'
+        OUTPUT_DIR    = 'publish'
+    }
+
+    stages {
+        stage('Checkout')   { steps { checkout scm } }
+        stage('Tool Info')  { steps { bat 'dotnet --info' } }
+        stage('Restore')    { steps { bat 'dotnet restore %CSProj%' } }
+        stage('Build')      { steps { bat 'dotnet build %CSProj% -c %CONFIGURATION% --no-restore' } }
+        stage('Test') {
+            steps {
+                script {
+                    def hasTests = bat(
+                        script: '@dir /b /s *Tests.csproj 2&gt;nul | findstr /r ".*" &gt;nul &amp;&amp; echo YES || echo NO',
+                        returnStdout: true
+                    ).trim().endsWith('YES')
+                    if (hasTests) {
+                        bat 'dotnet test -c %CONFIGURATION% --no-build --logger "trx;LogFileName=test-results.trx"'
+                    } else {
+                        echo 'No test projects found - skipping test stage.'
+                    }
+                }
+            }
+        }
+        stage('Publish')    { steps { bat 'dotnet publish %CSProj% -c %CONFIGURATION% -o %OUTPUT_DIR% --no-build' } }
+        stage('Archive')    { steps { archiveArtifacts artifacts: 'publish/**/*', fingerprint: true, allowEmptyArchive: false } }
+    }
+
+    post {
+        success { echo 'Court Meta CI pipeline completed successfully.' }
+        failure { echo 'Court Meta CI pipeline failed - check stage logs.' }
+        always  { echo "Build #${env.BUILD_NUMBER} finished with status ${currentBuild.currentResult}" }
+    }
+}
+</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>
