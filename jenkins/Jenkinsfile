@@ -8,10 +8,14 @@ pipeline {
     }
 
     environment {
-        PROJECT_DIR  = 'CourtMetaAPI'
-        CSProj       = 'CourtMetaAPI\\CourtMetaAPI.csproj'
-        CONFIGURATION = 'Release'
-        OUTPUT_DIR   = 'publish'
+        PROJECT_DIR                  = 'CourtMetaAPI'
+        CSProj                       = 'CourtMetaAPI\\CourtMetaAPI.csproj'
+        CONFIGURATION                = 'Release'
+        OUTPUT_DIR                   = 'publish'
+        // Quiet NuGet signature verification under Jenkins service account
+        NUGET_CERT_REVOCATION_MODE   = 'offline'
+        DOTNET_CLI_TELEMETRY_OPTOUT  = '1'
+        DOTNET_NOLOGO                = '1'
     }
 
     stages {
@@ -42,15 +46,12 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    // Run any test projects if present; do not fail if none exist
-                    def hasTests = bat(
-                        script: '@dir /b /s *Tests.csproj 2>nul | findstr /r ".*" >nul && echo YES || echo NO',
-                        returnStdout: true
-                    ).trim().endsWith('YES')
-                    if (hasTests) {
+                    // returnStatus avoids failing the step on non-zero exit
+                    def rc = bat(script: 'dir /s /b *Tests.csproj 2>nul', returnStatus: true)
+                    if (rc == 0) {
                         bat 'dotnet test -c %CONFIGURATION% --no-build --logger "trx;LogFileName=test-results.trx"'
                     } else {
-                        echo 'No test projects found — skipping test stage.'
+                        echo 'No test projects found - skipping test stage.'
                     }
                 }
             }
@@ -81,7 +82,7 @@ pipeline {
 
     post {
         success { echo 'Court Meta CI pipeline completed successfully.' }
-        failure { echo 'Court Meta CI pipeline failed — check stage logs.' }
+        failure { echo 'Court Meta CI pipeline failed - check stage logs.' }
         always  { echo "Build #${env.BUILD_NUMBER} finished with status ${currentBuild.currentResult}" }
     }
 }
