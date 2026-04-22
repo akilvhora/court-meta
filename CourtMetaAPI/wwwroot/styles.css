@@ -186,20 +186,6 @@ tbody td {
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover { background: #f7fafc; }
 
-/* ── CNR Detail Card ── */
-.cnr-card {
-  border: 1px solid #bee3f8;
-  background: #ebf8ff;
-  border-radius: 8px;
-  padding: 16px 20px;
-  display: none;
-}
-.cnr-card.show { display: block; }
-.cnr-card h3 { font-size: 15px; color: #2a4365; margin-bottom: 12px; }
-.cnr-field { display: flex; gap: 12px; margin-bottom: 8px; }
-.cnr-label { font-weight: 700; min-width: 130px; color: #4a5568; font-size: 13px; }
-.cnr-value { color: #2d3748; font-size: 13px; }
-
 /* ── Loading ── */
 .spinner {
   display: inline-block;
@@ -237,8 +223,70 @@ select:disabled {
   cursor: not-allowed;
 }
 
-/* ── History Table ── */
-.history-table { margin-top: 16px; }
+/* ── CNR split: parsed JSON (left) + raw API JSON (right) ── */
+.cnr-split {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+  align-items: start;
+}
+.cnr-split.show { display: grid; }
+.cnr-split-pane {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  min-width: 0;
+}
+.cnr-pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.cnr-pane-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #cbd5e0;
+  background: #fff;
+  color: #2d3748;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.copy-btn:hover { background: #edf2f7; }
+.copy-btn.copied { background: #c6f6d5; border-color: #9ae6b4; color: #22543d; }
+.copy-btn-icon { flex-shrink: 0; }
+.cnr-raw {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 14px;
+  font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 600px;
+  overflow: auto;
+  margin: 0;
+}
+@media (max-width: 768px) {
+  .cnr-split.show { grid-template-columns: 1fr; }
+}
 
 /* ── Install Banner ── */
 .install-banner {

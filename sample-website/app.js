@@ -41,6 +41,25 @@
     el('extStatus').textContent = text;
   }
 
+  // ── Copy buttons ─────────────────────────────────────────────────────────────
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const target = el(this.dataset.copyTarget);
+      const text = target ? target.textContent : '';
+      if (!text) return;
+      const label = this.querySelector('.copy-btn-label');
+      navigator.clipboard.writeText(text).then(() => {
+        const original = label ? label.textContent : '';
+        if (label) label.textContent = 'Copied';
+        this.classList.add('copied');
+        setTimeout(() => {
+          if (label) label.textContent = original;
+          this.classList.remove('copied');
+        }, 1200);
+      });
+    });
+  });
+
   // ── Tab switching ────────────────────────────────────────────────────────────
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', function () {
@@ -77,9 +96,9 @@
   cnrBtn.addEventListener('click', function () {
     const cino = el('cnrNumber').value.trim().toUpperCase();
     hideAlert(cnrError);
-    el('cnrCard').className = 'cnr-card';
-    el('cnrHistoryWrap').style.display = 'none';
-    el('cnrRawWrap').style.display = 'none';
+    el('cnrSplit').classList.remove('show');
+    el('cnrRaw').textContent = '';
+    el('cnrParsed').textContent = '';
 
     if (!cino) { showAlert(cnrError, 'Please enter a CNR number.'); return; }
     if (cino.length < 16) { showAlert(cnrError, 'CNR number must be at least 16 characters.'); return; }
@@ -88,35 +107,9 @@
 
     CourtMeta.cnrSearch(cino)
       .then(data => {
-        el('cnrCino').textContent       = data.cino || cino;
-        el('cnrType').textContent       = data.type === 'filing' ? 'Filing Case' : 'Regular Case';
-        el('cnrCaseNumber').textContent = data.caseNumber || 'N/A';
-        el('cnrCardTitle').textContent  = data.type === 'filing' ? 'Filing Case Details' : 'Case Details';
-        el('cnrCard').className = 'cnr-card show';
-
-        const history = data.history;
-        if (Array.isArray(history) && history.length > 0) {
-          const keys = Object.keys(history[0]);
-          const pick = pat => keys.find(k => pat.test(k)) || '';
-          const dateKey      = pick(/^(?!next).*date/i) || keys[0];
-          const purposeKey   = pick(/^(?!next).*purpose/i) || keys[1];
-          const judgeKey     = pick(/judge/i);
-          const businessKey  = pick(/business/i);
-          const nextDateKey  = pick(/next.*date/i);
-          const nextPurpKey  = pick(/next.*purpose/i);
-
-          buildRows(el('cnrHistoryBody'), history.map(h => [
-            h[dateKey], h[purposeKey],
-            judgeKey    ? h[judgeKey]    : '',
-            businessKey ? h[businessKey] : '',
-            nextDateKey ? h[nextDateKey] : '',
-            nextPurpKey ? h[nextPurpKey] : ''
-          ]));
-          el('cnrHistoryWrap').style.display = 'block';
-        } else if (history) {
-          el('cnrRaw').textContent = JSON.stringify(history, null, 2);
-          el('cnrRawWrap').style.display = 'block';
-        }
+        el('cnrParsed').textContent = JSON.stringify(data.parsed, null, 2);
+        el('cnrRaw').textContent    = JSON.stringify(data.raw,    null, 2);
+        el('cnrSplit').classList.add('show');
       })
       .catch(err => showAlert(cnrError, err.message))
       .finally(() => setLoading(cnrBtn, false));

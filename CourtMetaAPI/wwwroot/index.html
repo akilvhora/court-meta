@@ -58,26 +58,32 @@
       <div class="result-section">
         <div class="alert alert-error" id="cnrError"></div>
 
-        <div class="cnr-card" id="cnrCard">
-          <h3 id="cnrCardTitle">Case Details</h3>
-          <div class="cnr-field"><span class="cnr-label">CNR Number</span><span class="cnr-value" id="cnrCino">–</span></div>
-          <div class="cnr-field"><span class="cnr-label">Case Type</span><span class="cnr-value" id="cnrType">–</span></div>
-          <div class="cnr-field"><span class="cnr-label">Case Number</span><span class="cnr-value" id="cnrCaseNumber">–</span></div>
-        </div>
-
-        <div id="cnrHistoryWrap" style="display:none;" class="history-table">
-          <h3>Case History</h3>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>#</th><th>Date</th><th>Purpose</th><th>Judge</th><th>Business</th><th>Next Date</th><th>Next Purpose</th></tr></thead>
-              <tbody id="cnrHistoryBody"></tbody>
-            </table>
+        <div class="cnr-split" id="cnrSplit">
+          <div class="cnr-split-pane cnr-split-left">
+            <div class="cnr-pane-header">
+              <div class="cnr-pane-title">Parsed JSON</div>
+              <button type="button" class="copy-btn" data-copy-target="cnrParsed">
+                <svg class="copy-btn-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                  <path fill="currentColor" d="M5 1a2 2 0 0 0-2 2v1H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H5zm0 2h7v9h-1V6a2 2 0 0 0-2-2H5V3zM2 6h7v8H2V6z"/>
+                </svg>
+                <span class="copy-btn-label">Copy</span>
+              </button>
+            </div>
+            <pre id="cnrParsed" class="cnr-raw"></pre>
           </div>
-        </div>
 
-        <div id="cnrRawWrap" style="display:none;margin-top:16px;">
-          <div class="section-label">Raw Response</div>
-          <pre id="cnrRaw" style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:6px;padding:14px;font-size:12px;overflow-x:auto;white-space:pre-wrap;color:#2d3748;margin-top:8px;"></pre>
+          <div class="cnr-split-pane cnr-split-right">
+            <div class="cnr-pane-header">
+              <div class="cnr-pane-title">API Response (JSON)</div>
+              <button type="button" class="copy-btn" data-copy-target="cnrRaw">
+                <svg class="copy-btn-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                  <path fill="currentColor" d="M5 1a2 2 0 0 0-2 2v1H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H5zm0 2h7v9h-1V6a2 2 0 0 0-2-2H5V3zM2 6h7v8H2V6z"/>
+                </svg>
+                <span class="copy-btn-label">Copy</span>
+              </button>
+            </div>
+            <pre id="cnrRaw" class="cnr-raw"></pre>
+          </div>
         </div>
       </div>
     </div>
