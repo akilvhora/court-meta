@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOTNET_CLI_TELEMETRY_OPTOUT = '1'
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
-        NEXUS_URL  = 'http://server:8082'
+        NEXUS_URL  = 'http://192.168.1.111:8081'
         NEXUS_REPO = 'court-meta-raw'
         // InnoSetup compiler — adjust path if installed elsewhere
         ISCC = 'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe'
