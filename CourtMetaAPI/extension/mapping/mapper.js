@@ -4,7 +4,7 @@
 // Engine is pure, deterministic, zero-dependency. Rules are pluggable modules
 // registered in ./rules/index.js. See cnrMapping.json for an example config.
 
-import { getValueAtPath } from './resolvers.js';
+import { getValueAtPath, setValueAtPath } from './resolvers.js';
 import { applyTransforms } from './transforms.js';
 import { rules as defaultRules } from './rules/index.js';
 
@@ -31,7 +31,10 @@ export function applyMapping(config, input, { rules = defaultRules } = {}) {
   const result = {};
   for (const [key, spec] of Object.entries(config.fields || {})) {
     ctx.path = [key];
-    result[key] = evaluateSpec(spec, root, ctx);
+    const value = evaluateSpec(spec, root, ctx);
+    // Dotted keys like "filing.number" nest under { filing: { number: ... } }.
+    if (key.includes('.')) setValueAtPath(result, key, value);
+    else result[key] = value;
   }
   return { result, diagnostics: ctx.diagnostics };
 }

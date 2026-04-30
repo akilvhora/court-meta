@@ -7,6 +7,11 @@
   "fields": {
     "cnrNumber":  { "rule": "exact", "path": "cino" },
     "caseNumber": { "rule": "exact", "path": "caseNumber" },
+    "petitioner": { "rule": "exact", "path": "history.pet_name", "transforms": ["trim", "nullIfEmpty"] },
+    "respondant": { "rule": "exact", "path": "history.res_name", "transforms": ["trim", "nullIfEmpty"] },
+    "filing.number": { "rule": "exact", "path": "history.fil_no" },
+    "filing.year":   { "rule": "exact", "path": "history.fil_year" },
+    "filing.date":   { "rule": "exact", "path": "history.date_of_filing", "transforms": [{ "fn": "toDate" }] },
 
     "caseType": {
       "rule": "switch",

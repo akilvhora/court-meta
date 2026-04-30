@@ -13,6 +13,22 @@ export function getValueAtPath(obj, path) {
   return cur;
 }
 
+// Assigns `value` at a dotted path, creating intermediate objects as needed.
+// e.g. setValueAtPath({}, "filing.number", 42) -> { filing: { number: 42 } }
+export function setValueAtPath(obj, path, value) {
+  if (obj == null || !path) return obj;
+  const parts = String(path).split('.').filter(Boolean);
+  if (!parts.length) return obj;
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const p = parts[i];
+    if (cur[p] == null || typeof cur[p] !== 'object') cur[p] = {};
+    cur = cur[p];
+  }
+  cur[parts[parts.length - 1]] = value;
+  return obj;
+}
+
 // First own-key of `node` matching the regex pattern.
 // Returns { key, value } or null.
 export function findKeyByRegex(node, pattern, { caseSensitive = false } = {}) {

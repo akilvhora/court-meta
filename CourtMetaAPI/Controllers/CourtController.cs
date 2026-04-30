@@ -265,6 +265,7 @@ public class CourtController : ControllerBase
                     isHeader = parts.Length > 0 && parts[0] == "D"
                 };
             })
+            .Where(c => c.code != "0")
             .ToList();
 
         // rawCourtNames included temporarily to diagnose display issues
