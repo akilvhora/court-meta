@@ -54,6 +54,79 @@ const CourtMeta = (() => {
     });
   }
 
+  // The extension's background.js rejects unknown actions with
+  // "Unknown action: <name>". That almost always means an old build is still
+  // installed in Chrome (manifests with the same version don't auto-replace).
+  // Rewrite to a message the page-level error UI can show without context.
+  function rewriteExtensionError(err, action) {
+    const text = err || 'Unknown error from Court Meta extension';
+    if (typeof text === 'string' && text.indexOf('Unknown action') === 0) {
+      return 'Court Meta extension is out of date (action "' + action +
+        '" not recognised). Open chrome://extensions, click reload on Court Meta, ' +
+        'then refresh this page.';
+    }
+    return text;
+  }
+
+  /**
+   * Streaming request. Sends a COURT_META_REQUEST whose action is wired
+   * `streaming: true` in background.js. The extension acknowledges
+   * synchronously, then pushes COURT_META_STREAM_EVENT messages — each one is
+   * dispatched to `onProgress`. The returned promise resolves once the final
+   * `done` event fires (or rejects on a fatal `error`).
+   *
+   * Used for state-wide advocate search where progress per district is the
+   * whole point.
+   */
+  function streamRequest(action, params, onProgress) {
+    return ready().then(() => new Promise((resolve, reject) => {
+      const requestId = `cmr_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      let progressCount = 0;
+      let lastError = null;
+
+      function listener(event) {
+        if (event.source !== window) return;
+        const msg = event.data;
+        if (!msg || msg.requestId !== requestId) return;
+
+        if (msg.type === 'COURT_META_STREAM_EVENT') {
+          const ev = msg.event || {};
+          if (ev.type === 'done') {
+            window.removeEventListener('message', listener);
+            if (lastError) reject(new Error(lastError));
+            else resolve({ progressCount });
+            return;
+          }
+          if (ev.type === 'error') {
+            lastError = ev.error || 'stream error';
+            // wait for the trailing `done` to actually settle the promise
+            return;
+          }
+          progressCount += 1;
+          try { if (onProgress) onProgress(ev); }
+          catch (e) { console.error('[CourtMeta] onProgress threw:', e); }
+          return;
+        }
+
+        // Synchronous ack from the extension. If the extension reports a
+        // failure here (e.g. unknown action), bail immediately.
+        if (msg.type === 'COURT_META_RESPONSE') {
+          if (msg.success === false) {
+            window.removeEventListener('message', listener);
+            reject(new Error(rewriteExtensionError(msg.error, action)));
+          }
+          // success ack — keep listening for stream events
+        }
+      }
+
+      window.addEventListener('message', listener);
+      window.postMessage(
+        { type: 'COURT_META_REQUEST', action, params, requestId },
+        '*'
+      );
+    }));
+  }
+
   /**
    * Send a request to the extension and wait for the response.
    * Returns a promise that resolves with { success, data, error }.
@@ -74,7 +147,7 @@ const CourtMeta = (() => {
           if (msg.success) {
             resolve(msg.data);
           } else {
-            reject(new Error(msg.error || 'Unknown error from Court Meta extension'));
+            reject(new Error(rewriteExtensionError(msg.error, action)));
           }
         }
 
@@ -101,6 +174,80 @@ const CourtMeta = (() => {
     fetchComplexes: (state_code, dist_code) => request('fetchComplexes', { state_code, dist_code }),
     fetchCourts: (state_code, dist_code, court_code) =>
       request('fetchCourts', { state_code, dist_code, court_code }),
-    cnrSearch: (cino) => request('cnrSearch', { cino })
+
+    // CNR (legacy): returns the raw history blob from eCourts.
+    cnrSearch: (cino) => request('cnrSearch', { cino }),
+
+    // CNR bundle: structured CaseBundle with caseInfo, parties, advocates, court,
+    // filing, hearings, transfers, processes, orders. Workflow A entry point.
+    cnrBundle: (cino) => request('cnrBundle', { cino }),
+
+    // View Business — drill-down for a specific hearing date in a CaseBundle.
+    cnrBusiness: ({ state_code, dist_code, court_code, case_number,
+                    hearingDate, disposalFlag, courtNo }) =>
+      request('cnrBusiness', { state_code, dist_code, court_code, case_number,
+                               hearingDate, disposalFlag, courtNo }),
+
+    // Writ / application detail — drill-down for an application row.
+    cnrWrit: ({ state_code, dist_code, court_code, case_number, app_cs_no }) =>
+      request('cnrWrit', { state_code, dist_code, court_code, case_number, app_cs_no }),
+
+    // Order PDF — resolves to { dataUrl, mime, size }. dataUrl can be assigned to
+    // an <iframe src=""> or used as the href of a download anchor.
+    cnrOrderPdf: ({ state_code, dist_code, court_code, orderYr, order_id, crno }) =>
+      request('cnrOrderPdf', { state_code, dist_code, court_code, orderYr, order_id, crno }),
+
+    // ── Phase 3 — case / filing number search ──────────────────────────────
+    // Case-type dropdown for the selected court (cached server-side).
+    fetchCaseTypes: ({ state_code, dist_code, court_code }) =>
+      request('fetchCaseTypes', { state_code, dist_code, court_code }),
+
+    // Search by case number. `courts` = comma-joined njdg_est_codes.
+    // Resolves to { count, results: [{ cino, court_code, ... }], raw }.
+    searchByCaseNumber: ({ state_code, dist_code, courts, case_type, number, year }) =>
+      request('searchByCaseNumber', { state_code, dist_code, courts, case_type, number, year }),
+
+    // Search by filing number. Same shape as searchByCaseNumber.
+    searchByFilingNumber: ({ state_code, dist_code, courts, filingNumber, year }) =>
+      request('searchByFilingNumber', { state_code, dist_code, courts, filingNumber, year }),
+
+    // ── Phase 4 — cause list ───────────────────────────────────────────────
+    // Cases caused at a given court room on a date.
+    //   flag: 'civ_t' | 'cri_t' (default civ_t)
+    //   selprevdays: '0' (today) | '1' (past day)
+    // Resolves to { count, html, rows: [{ index, isHeader, cino?, cells: [] }] }.
+    causeList: ({ state_code, dist_code, court_code, court_no, date, flag, selprevdays }) =>
+      request('fetchCauseList', { state_code, dist_code, court_code, court_no, date, flag, selprevdays }),
+
+    // ── Phase 5 — advocate search ──────────────────────────────────────────
+    //
+    // Single-court (synchronous JSON):
+    //   CourtMeta.searchByAdvocate({
+    //     scope: 'court', state_code, dist_code, courts: 'MHAU01,MHAU02',
+    //     mode: 'name'|'barcode', advocateName?, barstatecode?, barcode?,
+    //     pendingDisposed?, year?, date?
+    //   })
+    //   → { count, results: [{ cino, court_code, … }], raw }
+    //
+    // State-wide (NDJSON stream — progress per district):
+    //   CourtMeta.searchByAdvocate({
+    //     scope: 'state', state_code, mode, advocateName | barcode, …,
+    //     onProgress(event) { /* event.type ∈ {start, progress, complete} */ }
+    //   })
+    //   → resolves with { progressCount } once the final `done` event fires.
+    searchByAdvocate(params) {
+      const scope = (params && params.scope) || 'court';
+      if (scope === 'state') {
+        const onProgress = params.onProgress;
+        const payload = Object.assign({}, params);
+        delete payload.scope;
+        delete payload.onProgress;
+        return streamRequest('searchByAdvocateState', payload, onProgress);
+      }
+      const payload = Object.assign({}, params);
+      delete payload.scope;
+      delete payload.onProgress;
+      return request('searchByAdvocateCourt', payload);
+    }
   };
 })();

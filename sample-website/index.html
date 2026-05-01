@@ -41,6 +41,10 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="cnr">CNR Search</button>
       <button class="tab-btn" data-tab="browser">Court Browser</button>
+      <button class="tab-btn" data-tab="case-search">Case Number</button>
+      <button class="tab-btn" data-tab="filing-search">Filing Number</button>
+      <button class="tab-btn" data-tab="cause-list">Cause List</button>
+      <button class="tab-btn" data-tab="advocate">Advocate</button>
     </div>
 
     <!-- ══════════════════════════════════ -->
@@ -142,6 +146,228 @@
         <span class="spinner dark"></span> Loading…
       </div>
 
+    </div>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TAB 3: Case Number Search        -->
+    <!-- ══════════════════════════════════ -->
+    <div class="card tab-panel" id="tab-case-search">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="csState">State</label>
+          <select id="csState"><option value="">— Select State —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="csDistrict">District</label>
+          <select id="csDistrict" disabled><option value="">— Select state first —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="csComplex">Court Complex</label>
+          <select id="csComplex" disabled><option value="">— Select district first —</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="csCaseType">Case Type</label>
+          <select id="csCaseType" disabled><option value="">— Select complex first —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="csNumber">Number</label>
+          <input type="text" id="csNumber" placeholder="e.g. 123" />
+        </div>
+        <div class="form-group">
+          <label for="csYear">Year</label>
+          <input type="text" id="csYear" placeholder="e.g. 2024" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="csSearchBtn">Search</button>
+
+      <div class="result-section">
+        <div class="alert alert-error" id="csError"></div>
+        <div id="csResultsWrap" style="display:none; margin-top:16px;">
+          <div class="section-label" id="csResultsHeader" style="font-size:12px; font-weight:600; color:#718096; margin-bottom:8px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>CNR</th><th>Case</th><th>Type</th><th>Year</th><th>Parties</th><th>Court</th><th></th></tr></thead>
+              <tbody id="csResultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TAB 4: Filing Number Search      -->
+    <!-- ══════════════════════════════════ -->
+    <div class="card tab-panel" id="tab-filing-search">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="fsState">State</label>
+          <select id="fsState"><option value="">— Select State —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="fsDistrict">District</label>
+          <select id="fsDistrict" disabled><option value="">— Select state first —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="fsComplex">Court Complex</label>
+          <select id="fsComplex" disabled><option value="">— Select district first —</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="fsFiling">Filing Number</label>
+          <input type="text" id="fsFiling" placeholder="e.g. 456" />
+        </div>
+        <div class="form-group">
+          <label for="fsYear">Year</label>
+          <input type="text" id="fsYear" placeholder="e.g. 2024" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="fsSearchBtn">Search</button>
+
+      <div class="result-section">
+        <div class="alert alert-error" id="fsError"></div>
+        <div id="fsResultsWrap" style="display:none; margin-top:16px;">
+          <div class="section-label" id="fsResultsHeader" style="font-size:12px; font-weight:600; color:#718096; margin-bottom:8px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>CNR</th><th>Case</th><th>Type</th><th>Year</th><th>Parties</th><th>Court</th><th></th></tr></thead>
+              <tbody id="fsResultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TAB 5: Cause List                -->
+    <!-- ══════════════════════════════════ -->
+    <div class="card tab-panel" id="tab-cause-list">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="clState">State</label>
+          <select id="clState"><option value="">— Select State —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="clDistrict">District</label>
+          <select id="clDistrict" disabled><option value="">— Select state first —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="clComplex">Court Complex</label>
+          <select id="clComplex" disabled><option value="">— Select district first —</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="clCourtNo">Court Room</label>
+          <select id="clCourtNo" disabled><option value="">— Select complex first —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="clDate">Date</label>
+          <input type="text" id="clDate" placeholder="dd-mm-yyyy or yyyy-mm-dd" />
+        </div>
+        <div class="form-group">
+          <label for="clFlag">Type</label>
+          <select id="clFlag">
+            <option value="civ_t">Civil</option>
+            <option value="cri_t">Criminal</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="clSearchBtn">Load Cause List</button>
+
+      <div class="result-section">
+        <div class="alert alert-error" id="clError"></div>
+        <div id="clResultsWrap" style="display:none; margin-top:16px;">
+          <div class="section-label" id="clResultsHeader" style="font-size:12px; font-weight:600; color:#718096; margin-bottom:8px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>CNR</th><th>Details</th><th></th></tr></thead>
+              <tbody id="clResultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TAB 6: Advocate Search          -->
+    <!-- ══════════════════════════════════ -->
+    <div class="card tab-panel" id="tab-advocate">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="advState">State</label>
+          <select id="advState"><option value="">— Select State —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="advScope">Scope</label>
+          <select id="advScope">
+            <option value="court">Single court complex</option>
+            <option value="state">All districts in state (live stream)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="advMode">Search By</label>
+          <select id="advMode">
+            <option value="name">Advocate Name</option>
+            <option value="barcode">Bar Code</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" id="advCourtRow">
+        <div class="form-group">
+          <label for="advDistrict">District</label>
+          <select id="advDistrict" disabled><option value="">— Select state first —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="advComplex">Court Complex</label>
+          <select id="advComplex" disabled><option value="">— Select district first —</option></select>
+        </div>
+      </div>
+
+      <div class="form-row" id="advNameRow">
+        <div class="form-group">
+          <label for="advName">Advocate Name</label>
+          <input type="text" id="advName" placeholder="e.g. John Doe" />
+        </div>
+        <div class="form-group">
+          <label for="advPending">Status</label>
+          <select id="advPending">
+            <option value="Pending">Pending</option>
+            <option value="Disposed">Disposed</option>
+            <option value="Both">Both</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" id="advBarcodeRow" style="display:none;">
+        <div class="form-group">
+          <label for="advBarState">Bar State Code</label>
+          <input type="text" id="advBarState" placeholder="e.g. 1" />
+        </div>
+        <div class="form-group">
+          <label for="advBarCode">Bar Code</label>
+          <input type="text" id="advBarCode" placeholder="e.g. MAH/12345/2010" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="advSearchBtn">Search</button>
+
+      <div class="result-section">
+        <div class="alert alert-error" id="advError"></div>
+        <div id="advProgress" style="display:none; margin-top:12px; font-size:13px; color:#4a5568;"></div>
+        <div id="advResultsWrap" style="display:none; margin-top:16px;">
+          <div class="section-label" id="advResultsHeader" style="font-size:12px; font-weight:600; color:#718096; margin-bottom:8px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>CNR</th><th>Type</th><th>Year</th><th>Parties</th><th>District / Court</th><th></th></tr></thead>
+              <tbody id="advResultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div><!-- /container -->

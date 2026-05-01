@@ -101,4 +101,14 @@
   }
 
   window.addEventListener('message', onPageMessage);
+
+  // ── Stream-event push from background → page ─────────────────────────────
+  // Streaming actions (e.g. state-wide advocate search) acknowledge the page
+  // synchronously and then push subsequent events via chrome.tabs.sendMessage.
+  // We just relay each event onto the window message bus so court-meta.js can
+  // dispatch it to the matching `onProgress` callback by `requestId`.
+  chrome.runtime.onMessage.addListener(function (message) {
+    if (!message || message.type !== 'COURT_META_STREAM_EVENT') return;
+    window.postMessage(message, '*');
+  });
 })();

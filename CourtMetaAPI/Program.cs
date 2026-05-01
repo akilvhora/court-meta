@@ -22,8 +22,19 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 
+// In-memory cache for quasi-static lookups (states, districts, complexes, case-types).
+// Cuts repeat upstream calls when the extension is opened multiple times.
+builder.Services.AddMemoryCache();
+
 // Singleton so the JWT token is shared across all requests and refreshed in one place
 builder.Services.AddSingleton<CourtMetaAPI.Services.TokenService>();
+
+// Single transport over the eCourts mobile API. All controllers funnel through this.
+builder.Services.AddScoped<CourtMetaAPI.Services.EcourtsClient>();
+builder.Services.AddSingleton<CourtMetaAPI.Services.HistoryParser>();
+builder.Services.AddSingleton<CourtMetaAPI.Services.CauseListParser>();
+builder.Services.AddScoped<CourtMetaAPI.Services.AdvocateSearchService>();
+builder.Services.AddSingleton<CourtMetaAPI.Services.TelemetryService>();
 
 // Register a named HttpClient for eCourts API
 builder.Services.AddHttpClient("eCourts", client =>
@@ -44,6 +55,46 @@ var app = builder.Build();
 // No origin restriction — the browser loads these normally.
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+// ── Per-request telemetry ──────────────────────────────────────────────────
+// Times every /api/* request and pushes a TelemetryEvent into the writer
+// channel. Exceptions and non-2xx responses still get logged with the status
+// code so operators can spot upstream flapping.
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Path.StartsWithSegments("/api"))
+    {
+        await next();
+        return;
+    }
+
+    var sw = System.Diagnostics.Stopwatch.StartNew();
+    string? error = null;
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        error = ex.Message;
+        throw;
+    }
+    finally
+    {
+        sw.Stop();
+        var telemetry = context.RequestServices
+            .GetService<CourtMetaAPI.Services.TelemetryService>();
+        telemetry?.Track(new CourtMetaAPI.Services.TelemetryEvent
+        {
+            Type = "request",
+            Endpoint = context.Request.Path.Value,
+            Method = context.Request.Method,
+            StatusCode = context.Response.StatusCode,
+            LatencyMs = sw.Elapsed.TotalMilliseconds,
+            Error = error
+        });
+    }
+});
 
 // ── Extension client guard ─────────────────────────────────────────────────────
 // Applied only to /api/* routes.

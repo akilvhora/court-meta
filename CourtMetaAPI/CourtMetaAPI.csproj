@@ -18,9 +18,17 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
   </ItemGroup>
 
-  <!-- Extension source files tracked by the project -->
+  <!--
+    Extension source = single tree at repo-root \extension\.
+    Previously this csproj kept a second copy under CourtMetaAPI\extension\ which
+    repeatedly drifted. It now consumes the root copy directly.
+  -->
+  <PropertyGroup>
+    <ExtensionSourceDir>$(MSBuildProjectDirectory)\..\extension</ExtensionSourceDir>
+  </PropertyGroup>
+
   <ItemGroup>
-    <ExtensionFiles Include="extension\**\*" />
+    <ExtensionFiles Include="$(ExtensionSourceDir)\**\*" />
   </ItemGroup>
 
   <!--
@@ -33,10 +41,10 @@
     <Copy SourceFiles="@(ExtensionFiles)"
           DestinationFiles="@(ExtensionFiles->'$(MSBuildProjectDirectory)\wwwroot\extension\%(RecursiveDir)%(Filename)%(Extension)')"
           SkipUnchangedFiles="true" />
-    <ZipDirectory SourceDirectory="$(MSBuildProjectDirectory)\extension"
+    <ZipDirectory SourceDirectory="$(ExtensionSourceDir)"
                   DestinationFile="$(MSBuildProjectDirectory)\wwwroot\court-meta-extension.zip"
                   Overwrite="true" />
-    <Message Text="Extension bundled → wwwroot/extension/ and wwwroot/court-meta-extension.zip" Importance="high" />
+    <Message Text="Extension bundled from $(ExtensionSourceDir) → wwwroot/extension/ and wwwroot/court-meta-extension.zip" Importance="high" />
   </Target>
 
 </Project>

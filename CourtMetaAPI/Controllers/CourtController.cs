@@ -1,114 +1,37 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Headers;
-using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json.Nodes;
 using CourtMetaAPI.Services;
 
 namespace CourtMetaAPI.Controllers;
 
+/// <summary>
+/// Lookup endpoints — geographic / court hierarchy.
+///
+/// All responses are cached in <see cref="IMemoryCache"/> with conservative TTLs
+/// because the underlying data is quasi-static and the upstream API is rate-sensitive.
+/// </summary>
 [ApiController]
 [Route("api/court")]
 public class CourtController : ControllerBase
 {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly EcourtsClient _ecourts;
     private readonly TokenService _tokenService;
+    private readonly IMemoryCache _cache;
 
-    public CourtController(IHttpClientFactory httpClientFactory, TokenService tokenService)
+    private static readonly TimeSpan StatesTtl     = TimeSpan.FromHours(24);
+    private static readonly TimeSpan DistrictsTtl  = TimeSpan.FromHours(12);
+    private static readonly TimeSpan ComplexesTtl  = TimeSpan.FromHours(6);
+    private static readonly TimeSpan CourtsTtl     = TimeSpan.FromHours(1);
+
+    public CourtController(EcourtsClient ecourts, TokenService tokenService, IMemoryCache cache)
     {
-        _httpClientFactory = httpClientFactory;
+        _ecourts = ecourts;
         _tokenService = tokenService;
+        _cache = cache;
     }
 
-    /// <summary>
-    /// Calls an eCourts endpoint exactly as the mobile app does:
-    ///   GET /endpoint?params=encryptData(fields)
-    ///   Authorization: Bearer encryptData(token)   (omitted for the auth call itself)
-    ///
-    /// Responses are AES-decrypted before JSON parsing.
-    /// status:'N' errors are surfaced; status_code:'401' triggers a token refresh + retry.
-    /// </summary>
-    private async Task<(JsonNode? node, string? error)> CallECourts(
-        string endpoint,
-        Dictionary<string, string> fields,
-        bool isAuthCall = false)
-    {
-        var client = _httpClientFactory.CreateClient("eCourts");
-
-        for (int attempt = 0; attempt < 2; attempt++)
-        {
-            try
-            {
-                // Encrypt the request payload exactly as encryptData(data) in the app
-                var encryptedParams = EncryptionHelper.EncryptData(fields);
-                var url = $"{endpoint}?params={Uri.EscapeDataString(encryptedParams)}";
-
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-
-                if (!isAuthCall)
-                {
-                    var token = await _tokenService.GetTokenAsync();
-                    if (!string.IsNullOrEmpty(token))
-                    {
-                        // Mobile app: Authorization: 'Bearer ' + encryptData(jwttoken)
-                        var encryptedToken = EncryptionHelper.EncryptData(token);
-                        request.Headers.Authorization =
-                            new AuthenticationHeaderValue("Bearer", encryptedToken);
-                    }
-                }
-
-                var response = await client.SendAsync(request);
-                var body = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                    return (null, $"eCourts API returned HTTP {(int)response.StatusCode}: {body}");
-
-                // Every response is AES-encrypted; decrypt before parsing
-                var json = EncryptionHelper.DecryptResponse(body) ?? body;
-
-                JsonNode? node;
-                try { node = JsonNode.Parse(json); }
-                catch { return (null, $"Unreadable response: {body[..Math.Min(200, body.Length)]}"); }
-
-                // Update token cache from every response (server may rotate it)
-                _tokenService.UpdateFromResponse(node);
-
-                // Application-level error gate (mirrors callToWebService in main.js)
-                var status = node?["status"]?.ToString();
-                var statusCode = node?["status_code"]?.ToString();
-
-                if (status == "N")
-                {
-                    if (statusCode == "401" && attempt == 0)
-                    {
-                        _tokenService.Invalidate();
-                        await _tokenService.RefreshAsync();
-                        continue;
-                    }
-
-                    // Server uses "Msg" (capital M) — check both casings
-                    var msg = node?["Msg"]?.ToString() ?? node?["msg"]?.ToString();
-                    return (null, string.IsNullOrEmpty(msg)
-                        ? $"eCourts error. Response: {json[..Math.Min(300, json.Length)]}"
-                        : msg);
-                }
-
-                return (node, null);
-            }
-            catch (TaskCanceledException)
-            {
-                return (null, "Request to eCourts API timed out.");
-            }
-            catch (Exception ex)
-            {
-                return (null, $"Error calling eCourts API: {ex.Message}");
-            }
-        }
-
-        return (null, "eCourts API returned 401 even after token refresh.");
-    }
-
-    // ─── 0. Token status (debug) ───────────────────────────────────────────────
-    // GET /api/court/token-status
+    // ─── Token status (debug) ─────────────────────────────────────────────────
     [HttpGet("token-status")]
     public async Task<IActionResult> TokenStatus()
     {
@@ -116,19 +39,20 @@ public class CourtController : ControllerBase
         if (string.IsNullOrEmpty(token))
             return Ok(new { success = false, tokenAcquired = false, message = "No token. Check API logs." });
 
-        // Show just enough of the token to confirm it looks like a JWT (3 segments)
         var preview = token.Length > 40 ? token[..20] + "…" + token[^10..] : token;
         return Ok(new { success = true, tokenAcquired = true, tokenPreview = preview });
     }
 
-    // ─── 1. State Fetch ────────────────────────────────────────────────────────
-    // GET /api/court/states
+    // ─── State Fetch ──────────────────────────────────────────────────────────
     [HttpGet("states")]
     public async Task<IActionResult> GetStates()
     {
+        if (_cache.TryGetValue("states", out IActionResult? cached) && cached is not null)
+            return cached;
+
         var timestamp = ((long)(DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds).ToString();
 
-        var (node, error) = await CallECourts("stateWebService.php", new Dictionary<string, string>
+        var (node, error) = await _ecourts.CallAsync("stateWebService.php", new()
         {
             ["action_code"] = "fillState",
             ["time"] = timestamp
@@ -148,18 +72,23 @@ public class CourtController : ControllerBase
             state_lang = s?["state_lang"]?.ToString()
         }).ToList();
 
-        return Ok(new { success = true, states = result });
+        var ok = Ok(new { success = true, states = result });
+        _cache.Set("states", (IActionResult)ok, StatesTtl);
+        return ok;
     }
 
-    // ─── 2. District Fetch ─────────────────────────────────────────────────────
-    // GET /api/court/districts?state_code=1
+    // ─── District Fetch ──────────────────────────────────────────────────────
     [HttpGet("districts")]
     public async Task<IActionResult> GetDistricts([FromQuery] string state_code)
     {
         if (string.IsNullOrWhiteSpace(state_code))
             return BadRequest(new { success = false, error = "state_code is required." });
 
-        var (node, error) = await CallECourts("districtWebService.php", new Dictionary<string, string>
+        var key = $"districts:{state_code}";
+        if (_cache.TryGetValue(key, out IActionResult? cached) && cached is not null)
+            return cached;
+
+        var (node, error) = await _ecourts.CallAsync("districtWebService.php", new()
         {
             ["state_code"] = state_code,
             ["test_param"] = "pending"
@@ -179,11 +108,12 @@ public class CourtController : ControllerBase
             mardist_name = d?["mardist_name"]?.ToString()
         }).ToList();
 
-        return Ok(new { success = true, districts = result });
+        var ok = Ok(new { success = true, districts = result });
+        _cache.Set(key, (IActionResult)ok, DistrictsTtl);
+        return ok;
     }
 
-    // ─── 3. Complex Fetch ──────────────────────────────────────────────────────
-    // GET /api/court/complexes?state_code=1&dist_code=1
+    // ─── Complex Fetch ───────────────────────────────────────────────────────
     [HttpGet("complexes")]
     public async Task<IActionResult> GetComplexes(
         [FromQuery] string state_code,
@@ -192,7 +122,11 @@ public class CourtController : ControllerBase
         if (string.IsNullOrWhiteSpace(state_code) || string.IsNullOrWhiteSpace(dist_code))
             return BadRequest(new { success = false, error = "state_code and dist_code are required." });
 
-        var (node, error) = await CallECourts("courtEstWebService.php", new Dictionary<string, string>
+        var key = $"complexes:{state_code}:{dist_code}";
+        if (_cache.TryGetValue(key, out IActionResult? cached) && cached is not null)
+            return cached;
+
+        var (node, error) = await _ecourts.CallAsync("courtEstWebService.php", new()
         {
             ["action_code"] = "fillCourtComplex",
             ["state_code"] = state_code,
@@ -214,11 +148,12 @@ public class CourtController : ControllerBase
             lcourt_complex_name = c?["lcourt_complex_name"]?.ToString()
         }).ToList();
 
-        return Ok(new { success = true, complexes = result });
+        var ok = Ok(new { success = true, complexes = result });
+        _cache.Set(key, (IActionResult)ok, ComplexesTtl);
+        return ok;
     }
 
-    // ─── 4. Court Search ───────────────────────────────────────────────────────
-    // GET /api/court/courts?state_code=1&dist_code=1&court_code=101
+    // ─── Court Search ────────────────────────────────────────────────────────
     [HttpGet("courts")]
     public async Task<IActionResult> GetCourts(
         [FromQuery] string state_code,
@@ -232,7 +167,11 @@ public class CourtController : ControllerBase
             return BadRequest(new { success = false, error = "state_code, dist_code, and court_code are required." });
         }
 
-        var (node, error) = await CallECourts("courtNameWebService.php", new Dictionary<string, string>
+        var key = $"courts:{state_code}:{dist_code}:{court_code}";
+        if (_cache.TryGetValue(key, out IActionResult? cached) && cached is not null)
+            return cached;
+
+        var (node, error) = await _ecourts.CallAsync("courtNameWebService.php", new()
         {
             ["state_code"] = state_code,
             ["dist_code"] = dist_code,
@@ -268,93 +207,59 @@ public class CourtController : ControllerBase
             .Where(c => c.code != "0")
             .ToList();
 
-        // rawCourtNames included temporarily to diagnose display issues
-        return Ok(new { success = true, courts, rawCourtNames = courtNamesRaw });
+        var ok = Ok(new { success = true, courts });
+        _cache.Set(key, (IActionResult)ok, CourtsTtl);
+        return ok;
     }
 
-    // ─── 5. CNR Search ─────────────────────────────────────────────────────────
-    // GET /api/court/cnr?cino=MHPU010001232022
-    [HttpGet("cnr")]
-    public async Task<IActionResult> CnrSearch([FromQuery] string cino)
+    // ─── Latlong (court complex location) ────────────────────────────────────
+    // GET /api/court/courts/latlong?state_code=&dist_code=&court_code=&complex_code=
+    //
+    // Optional Phase 6 enrichment — useful for premise-on-map UIs. Cached
+    // alongside the regular court list since the underlying data is static.
+    [HttpGet("courts/latlong")]
+    public async Task<IActionResult> GetLatLong(
+        [FromQuery] string state_code,
+        [FromQuery] string dist_code,
+        [FromQuery] string court_code,
+        [FromQuery] string complex_code,
+        CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(cino))
-            return BadRequest(new { success = false, error = "cino is required." });
-
-        if (cino.Length < 16)
-            return BadRequest(new { success = false, error = "CNR number must be at least 16 characters." });
-
-        // Step 1: Check if this CNR belongs to a filing case or regular case
-        var (listNode, listError) = await CallECourts("listOfCasesWebService.php", new Dictionary<string, string>
+        if (string.IsNullOrWhiteSpace(state_code) ||
+            string.IsNullOrWhiteSpace(dist_code) ||
+            string.IsNullOrWhiteSpace(court_code) ||
+            string.IsNullOrWhiteSpace(complex_code))
         {
-            ["cino"] = cino,
-            ["version_number"] = "9.0",
-            ["language_flag"] = "english",
-            ["bilingual_flag"] = "0"
-        });
-
-        if (listError != null)
-            return StatusCode(502, new { success = false, error = listError });
-
-        if (listNode == null)
-            return NotFound(new { success = false, error = "CNR number not found." });
-
-        var caseNumber = listNode["case_number"]?.ToString();
-
-        // Step 2a: case_number is null → filing case
-        if (string.IsNullOrEmpty(caseNumber))
-        {
-            var (filingNode, filingError) = await CallECourts("filingCaseHistory.php", new Dictionary<string, string>
+            return BadRequest(new
             {
-                ["cino"] = cino,
-                ["language_flag"] = "english",
-                ["bilingual_flag"] = "0"
-            });
-
-            if (filingError != null)
-                return StatusCode(502, new { success = false, error = filingError });
-
-            var history = filingNode?["history"];
-            if (history == null)
-                return NotFound(new { success = false, error = "Filing case history not found for this CNR." });
-
-            return Ok(new
-            {
-                success = true,
-                data = new
-                {
-                    cino,
-                    type = "filing",
-                    caseNumber = (string?)null,
-                    history
-                }
+                success = false,
+                error = "state_code, dist_code, court_code, complex_code are required."
             });
         }
 
-        // Step 2b: regular case → fetch case history
-        var (historyNode, historyError) = await CallECourts("caseHistoryWebService.php", new Dictionary<string, string>
+        var key = $"latlong:{state_code}:{dist_code}:{court_code}:{complex_code}";
+        if (_cache.TryGetValue(key, out IActionResult? cached) && cached is not null)
+            return cached;
+
+        var (node, error) = await _ecourts.CallAsync("latlong.php", new()
         {
-            ["cinum"] = cino,
-            ["language_flag"] = "english",
-            ["bilingual_flag"] = "0"
-        });
+            ["state_code"] = state_code,
+            ["dist_code"] = dist_code,
+            ["court_code"] = court_code,
+            ["complex_code"] = complex_code
+        }, ct: ct);
 
-        if (historyError != null)
-            return StatusCode(502, new { success = false, error = historyError });
+        if (error != null) return StatusCode(502, new { success = false, error });
 
-        var caseHistory = historyNode?["history"];
-        if (caseHistory == null)
-            return NotFound(new { success = false, error = "Case history not found for this CNR." });
-
-        return Ok(new
+        var ok = Ok(new
         {
             success = true,
-            data = new
-            {
-                cino,
-                type = "case",
-                caseNumber,
-                history = caseHistory
-            }
+            latitude = node?["latitude"]?.ToString(),
+            longitude = node?["longitude"]?.ToString(),
+            map_url = node?["map_url"]?.ToString(),
+            court_complex = node?["court_complex"]?.ToString()
         });
+        _cache.Set(key, (IActionResult)ok, CourtsTtl);
+        return ok;
     }
 }
