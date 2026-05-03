@@ -182,6 +182,11 @@ const CourtMeta = (() => {
     // filing, hearings, transfers, processes, orders. Workflow A entry point.
     cnrBundle: (cino) => request('cnrBundle', { cino }),
 
+    // Resolve a cause-list row (case_no + establishment court_code) to a CNR
+    // and parsed CaseBundle. Resolves to { cino, data: bundle }.
+    cnrByCaseNo: ({ state_code, dist_code, court_code, case_no }) =>
+      request('cnrByCaseNo', { state_code, dist_code, court_code, case_no }),
+
     // View Business — drill-down for a specific hearing date in a CaseBundle.
     cnrBusiness: ({ state_code, dist_code, court_code, case_number,
                     hearingDate, disposalFlag, courtNo }) =>

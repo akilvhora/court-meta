@@ -58,6 +58,15 @@ const ACTION_MAP = {
     path: '/cnr/bundle',
     buildParams: (p) => qs({ cino: p.cino })
   },
+  cnrByCaseNo: {
+    path: '/cnr/by-case-no',
+    buildParams: (p) => qs({
+      state_code: p.state_code,
+      dist_code: p.dist_code,
+      court_code: p.court_code,
+      case_no: p.case_no
+    })
+  },
   cnrBusiness: {
     path: '/cnr/business',
     buildParams: (p) => qs({

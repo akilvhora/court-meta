@@ -30,6 +30,15 @@ public class CauseListParser
     private static readonly Regex CinoRx =
         new(@"\b[A-Z]{2}[A-Z0-9]{4}\d{6}\d{4}\b", RegexOptions.IgnoreCase);
 
+    // Each cause-list row links to a case via an anchor whose attribute string
+    // looks like: ...class='case_history_link  'court_code= '1' + case_no= '209100000702025' >
+    // We pull both out so the UI can resolve the row to a CNR via /cnr/by-case-no.
+    private static readonly Regex CaseNoRx =
+        new(@"case_no\s*=\s*'([^']+)'", RegexOptions.IgnoreCase);
+
+    private static readonly Regex CourtCodeRx =
+        new(@"court_code\s*=\s*'([^']+)'", RegexOptions.IgnoreCase);
+
     private static readonly Regex WhitespaceRx =
         new(@"\s+", RegexOptions.Singleline);
 
@@ -60,11 +69,19 @@ public class CauseListParser
             var cinoMatch = CinoRx.Match(rowHtml);
             var cino = cinoMatch.Success ? cinoMatch.Value.ToUpperInvariant() : null;
 
+            var caseNoMatch = CaseNoRx.Match(rowHtml);
+            var caseNo = caseNoMatch.Success ? caseNoMatch.Groups[1].Value : null;
+
+            var courtCodeMatch = CourtCodeRx.Match(rowHtml);
+            var courtCode = courtCodeMatch.Success ? courtCodeMatch.Groups[1].Value : null;
+
             result.Rows.Add(new CauseListRow
             {
                 Index = result.Rows.Count + 1,
                 IsHeader = isHeader,
                 Cino = cino,
+                CaseNo = caseNo,
+                CourtCode = courtCode,
                 Cells = cells
             });
         }
@@ -92,5 +109,7 @@ public class CauseListRow
     public int Index { get; set; }
     public bool IsHeader { get; set; }
     public string? Cino { get; set; }
+    public string? CaseNo { get; set; }
+    public string? CourtCode { get; set; }
     public List<string> Cells { get; set; } = new();
 }

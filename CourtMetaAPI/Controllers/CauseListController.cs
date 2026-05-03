@@ -53,14 +53,28 @@ public class CauseListController : ControllerBase
         if (resolvedFlag != "civ_t" && resolvedFlag != "cri_t")
             return BadRequest(new { success = false, error = "flag must be civ_t or cri_t." });
 
+        // /api/court/courts returns each room as "<est_code>^<court_no>" when the
+        // complex spans multiple establishments (e.g. NyayMandir Vadodara has
+        // njdg_est_code "1,2,17"). cases_new.php wants the *single* owning
+        // establishment as court_code and the bare room number as court_no, so
+        // split the compound here and override the comma-list court_code.
+        var resolvedCourtCode = court_code;
+        var resolvedCourtNo = court_no;
+        var caretIdx = court_no.IndexOf('^');
+        if (caretIdx > 0 && caretIdx < court_no.Length - 1)
+        {
+            resolvedCourtCode = court_no[..caretIdx];
+            resolvedCourtNo = court_no[(caretIdx + 1)..];
+        }
+
         var (node, error) = await _ecourts.CallAsync("cases_new.php", new()
         {
             ["state_code"] = state_code,
             ["dist_code"] = dist_code,
             ["flag"] = resolvedFlag,
             ["selprevdays"] = string.IsNullOrWhiteSpace(selprevdays) ? "0" : selprevdays!,
-            ["court_no"] = court_no,
-            ["court_code"] = court_code,
+            ["court_no"] = resolvedCourtNo,
+            ["court_code"] = resolvedCourtCode,
             ["causelist_date"] = NormalizeDate(date),
             ["language_flag"] = "english",
             ["bilingual_flag"] = "0"

@@ -63,6 +63,71 @@ public class CnrController : ControllerBase
         return Ok(new { success = true, data = bundle });
     }
 
+    // ─── /cnr/by-case-no — resolve a cause-list row to a CNR ─────────────────
+    // GET /api/court/cnr/by-case-no?state_code=&dist_code=&court_code=&case_no=
+    //
+    // Cause-list rows arrive without a CNR — only the upstream's internal
+    // case_no + establishment court_code (parsed out of the anchor markup).
+    // caseHistoryWebService.php accepts that form directly (API_DOCUMENTATION
+    // §4.3.2 alt request) and the response carries cino, so we surface that
+    // for the UI to feed into /cnr/bundle.
+    [HttpGet("by-case-no")]
+    public async Task<IActionResult> ByCaseNo(
+        [FromQuery] string state_code,
+        [FromQuery] string dist_code,
+        [FromQuery] string court_code,
+        [FromQuery] string case_no,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(state_code) ||
+            string.IsNullOrWhiteSpace(dist_code) ||
+            string.IsNullOrWhiteSpace(court_code) ||
+            string.IsNullOrWhiteSpace(case_no))
+        {
+            return BadRequest(new { success = false, error = "state_code, dist_code, court_code, case_no are required." });
+        }
+
+        var (node, error) = await _ecourts.CallAsync("caseHistoryWebService.php", new()
+        {
+            ["state_code"] = state_code,
+            ["dist_code"] = dist_code,
+            ["case_no"] = case_no,
+            ["court_code"] = court_code,
+            ["language_flag"] = "english",
+            ["bilingual_flag"] = "0"
+        }, ct: ct);
+
+        if (error != null) return StatusCode(502, new { success = false, error });
+
+        var history = node?["history"];
+        if (history == null)
+            return NotFound(new { success = false, error = "Case history not found for this case_no." });
+
+        var cino = ExtractCino(history);
+        if (string.IsNullOrEmpty(cino))
+            return Ok(new { success = false, error = "Case history returned without a CNR.", history });
+
+        return Ok(new { success = true, cino, data = _parser.Parse(cino, "case", history) });
+    }
+
+    private static string? ExtractCino(JsonNode history)
+    {
+        // history shape varies — look for cino/cinum on the root, then on the
+        // case-info section the parser also targets (caseInfo / case_info).
+        string? Try(JsonNode? n) => n?["cino"]?.ToString() ?? n?["cinum"]?.ToString();
+
+        var direct = Try(history);
+        if (!string.IsNullOrEmpty(direct)) return direct;
+
+        if (history is JsonObject obj)
+        {
+            foreach (var key in new[] { "caseInfo", "case_info", "case_details", "caseDetails" })
+                if (obj.TryGetPropertyValue(key, out var sub) && Try(sub) is { Length: > 0 } v)
+                    return v;
+        }
+        return null;
+    }
+
     // ─── /cnr/business — drill into a specific hearing ───────────────────────
     // GET /api/court/cnr/business?state_code=&dist_code=&court_code=&case_number=&hearingDate=&disposalFlag=&courtNo=
     [HttpGet("business")]

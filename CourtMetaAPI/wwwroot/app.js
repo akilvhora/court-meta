@@ -719,9 +719,18 @@
       const cino = r.cino || '';
       // Cells already stripped of HTML by the API parser; collapse to a single description column.
       const details = (r.cells || []).join(' • ');
-      const action = cino
-        ? `<button class="btn btn-secondary" data-cino="${escapeHtml(cino)}" data-action="bundle">Open</button>`
-        : '<span style="color:#a0aec0; font-size:12px;">no CNR</span>';
+      // Cause-list rows don't carry a CNR — they carry the upstream's internal
+      // case_no + establishment court_code. The /cnr/by-case-no endpoint
+      // resolves those to a CNR; we hand it off to jumpToCnr afterwards so the
+      // existing CNR-tab flow renders the bundle.
+      let action;
+      if (cino) {
+        action = `<button class="btn btn-secondary" data-cino="${escapeHtml(cino)}" data-action="bundle">Open</button>`;
+      } else if (r.caseNo && r.courtCode) {
+        action = `<button class="btn btn-secondary" data-case-no="${escapeHtml(r.caseNo)}" data-court-code="${escapeHtml(r.courtCode)}" data-action="resolve">Open</button>`;
+      } else {
+        action = '<span style="color:#a0aec0; font-size:12px;">no CNR</span>';
+      }
       return `<tr>
         <td>${i + 1}</td>
         <td><code style="font-size:12px;">${escapeHtml(cino || '–')}</code></td>
@@ -733,6 +742,28 @@
     body.querySelectorAll('button[data-action="bundle"]').forEach(btn => {
       btn.addEventListener('click', () => jumpToCnr(btn.dataset.cino));
     });
+
+    body.querySelectorAll('button[data-action="resolve"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!clCtx) return;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Resolving…';
+        CourtMeta.cnrByCaseNo({
+          state_code: clCtx.state_code,
+          dist_code: clCtx.dist_code,
+          court_code: btn.dataset.courtCode,
+          case_no: btn.dataset.caseNo
+        })
+          .then(data => {
+            if (data && data.cino) jumpToCnr(data.cino);
+            else showAlert(el('clError'), 'Could not resolve CNR for this row.');
+          })
+          .catch(err => showAlert(el('clError'), 'Failed to open case: ' + err.message))
+          .finally(() => { btn.disabled = false; btn.textContent = original; });
+      });
+    });
+
     wrap.style.display = 'block';
   }
 
