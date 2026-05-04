@@ -226,6 +226,145 @@ async function blobToDataUrl(blob) {
   return { dataUrl: `data:${mime};base64,${base64}`, mime, size: bytes.length };
 }
 
+// ── viewBusiness enrichment ────────────────────────────────────────────────
+// The mapped `hearings[i].historyOfCaseHearing["Business on Date"]` holds only
+// what the case-history payload exposes inline. Real business text is behind
+// s_show_business.php; this fetches it per hearing and overlays the result.
+//
+// Concurrency is capped to keep the upstream API happy. Failures are swallowed
+// per-hearing so a partial transcript is better than nothing.
+const ENRICH_BUSINESS_CONCURRENCY = 4;
+
+async function enrichCnrHearings(parsed, raw) {
+  const hearings = parsed?.hearings;
+  if (!Array.isArray(hearings) || hearings.length === 0) return;
+
+  const history = raw?.data?.history;
+  if (!history || typeof history !== 'object') return;
+
+  const ctx = extractCnrContext(history);
+  if (!ctx) return;
+
+  const rawRows = findRawHearingRows(history) || [];
+
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < hearings.length) {
+      const i = cursor++;
+      const row = rawRows[i];
+      if (!row || typeof row !== 'object') continue;
+
+      const hearingDate = pickByRegex(row, /^(?!next).*(date|hearing)/i)
+                       || pickByRegex(row, /hearing.*date/i);
+      if (!hearingDate) continue;
+
+      const courtNo = pickByRegex(row, /court.*no/i) || ctx.court_no;
+      const disposalFlag = pickByRegex(row, /disposal.*flag|^disposal$/i);
+
+      const url = `${API_BASE}/cnr/business${qs({
+        state_code: ctx.state_code,
+        dist_code: ctx.dist_code,
+        court_code: ctx.court_code,
+        case_number: ctx.case_number,
+        hearingDate,
+        disposalFlag,
+        courtNo
+      })}`;
+
+      try {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: { Accept: 'application/json', 'X-Court-Meta-Client': 'extension' }
+        });
+        if (!res.ok) continue;
+        const body = await res.json();
+        const view = body?.data?.viewBusiness;
+        if (view == null || view === '') continue;
+
+        const slot = hearings[i].historyOfCaseHearing
+                  || (hearings[i].historyOfCaseHearing = {});
+        slot['Business on Date'] = typeof view === 'string' ? view : JSON.stringify(view);
+      } catch (err) {
+        console.warn('[CourtMeta] business enrichment failed for hearing', i, err);
+      }
+    }
+  };
+
+  const n = Math.min(ENRICH_BUSINESS_CONCURRENCY, hearings.length);
+  await Promise.all(Array.from({ length: n }, () => worker()));
+}
+
+// Pull the routing fields the /cnr/business endpoint needs out of the upstream
+// history payload. Walks shallowly because the same keys can appear at
+// different nesting depths depending on case type (regular vs. filing).
+function extractCnrContext(history) {
+  const wanted = {
+    state_code:  ['state_code', 'stateCode', 'state'],
+    dist_code:   ['dist_code', 'distCode', 'district_code'],
+    court_code:  ['court_code', 'courtCode', 'establishment_code', 'estCode'],
+    case_number: ['case_number', 'case_no', 'caseNumber', 'caseNo', 'cnum'],
+    court_no:    ['court_no', 'courtno', 'court_number']
+  };
+  const result = {};
+  walk(history, 0);
+  function walk(node, depth) {
+    if (!node || typeof node !== 'object' || depth > 4) return;
+    if (Array.isArray(node)) { for (const it of node) walk(it, depth + 1); return; }
+    for (const [k, v] of Object.entries(node)) {
+      for (const target of Object.keys(wanted)) {
+        if (!result[target] && wanted[target].includes(k) && v != null && v !== '') {
+          result[target] = String(v);
+        }
+      }
+      if (v && typeof v === 'object') walk(v, depth + 1);
+    }
+  }
+  // court_no is optional — endpoint defaults to "1" when absent.
+  if (!result.state_code || !result.dist_code || !result.court_code || !result.case_number) {
+    return null;
+  }
+  return result;
+}
+
+// Locate the same hearings array the mapping engine's findArray latched onto,
+// so per-row metadata (hearing date, court_no, disposal flag) is available for
+// the s_show_business.php call.
+function findRawHearingRows(history) {
+  let found = null;
+  walk(history, 0);
+  function walk(node, depth) {
+    if (found || !node || typeof node !== 'object' || depth > 4) return;
+    if (Array.isArray(node)) { for (const it of node) walk(it, depth + 1); return; }
+    for (const [k, v] of Object.entries(node)) {
+      if (found) return;
+      if (Array.isArray(v) && /historyOfCaseHearing|hearr?ing/i.test(k) && looksLikeRows(v)) {
+        found = v;
+        return;
+      }
+      if (v && typeof v === 'object') walk(v, depth + 1);
+    }
+  }
+  return found;
+}
+
+function looksLikeRows(arr) {
+  if (!arr.length) return false;
+  const first = arr.find((x) => x && typeof x === 'object' && !Array.isArray(x));
+  if (!first) return false;
+  return Object.keys(first).some((k) => /judge|business|hearing|purpose|date/i.test(k));
+}
+
+function pickByRegex(obj, regex) {
+  if (!obj || typeof obj !== 'object') return null;
+  for (const key of Object.keys(obj)) {
+    if (regex.test(key)) {
+      const v = obj[key];
+      if (v != null && v !== '') return String(v);
+    }
+  }
+  return null;
+}
+
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type !== 'COURT_META_REQUEST') return false;
 
@@ -318,6 +457,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       if (mappingPromise) {
         const config = await mappingPromise;
         const { result: parsed } = applyMapping(config, data);
+        if (action === 'cnrSearch' && params.enrichBusiness !== false) {
+          await enrichCnrHearings(parsed, data);
+        }
         sendResponse({ success: true, data: { parsed, raw: data } });
       } else {
         sendResponse({ success: true, data });

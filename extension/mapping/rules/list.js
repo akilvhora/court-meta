@@ -1,4 +1,7 @@
+import { setValueAtPath } from '../resolvers.js';
+
 // Iterates an array source and applies a sub-mapping to each item.
+// Item keys containing "." nest into sub-objects (same convention as top-level fields).
 export default {
   name: 'list',
   evaluate(spec, node, ctx, evaluateSpec) {
@@ -9,7 +12,9 @@ export default {
       const out = {};
       for (const [key, sub] of Object.entries(item)) {
         ctx.path.push(`[${i}].${key}`);
-        out[key] = evaluateSpec(sub, row, ctx);
+        const value = evaluateSpec(sub, row, ctx);
+        if (key.includes('.')) setValueAtPath(out, key, value);
+        else out[key] = value;
         ctx.path.pop();
       }
       return out;

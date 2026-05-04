@@ -49,13 +49,13 @@ Web page  ──(window.postMessage)──▶  content.js  ──(chrome.runtime
 - **`content.js`** is injected at `document_start` into every URL. It bridges `window.postMessage` (page) ↔ `chrome.runtime.sendMessage` (background) and handles the `COURT_META_PING` / `COURT_META_READY` handshake. It detects context invalidation (extension reloaded) by probing `chrome.runtime?.id` and tells the page to refresh.
 - **`mapping/`** — declarative JSON-driven response refiner. `mapper.js` walks `config.fields`; each field's `rule` is dispatched through the registry in `rules/index.js` (`exact`, `regexKey`, `findArray`, `list`, `switch`, `literal`, `combine`, `coalesce`, `template`). Dotted field keys (e.g. `"filing.number"`) become nested objects via `setValueAtPath`. `transforms` and `default` are applied after the rule. `cnrMapping.json` is validated by `cnrMapping.schema.json` (JSON Schema draft-07). Engine supports config major version 1; bumping the major would break compat. To add a new mapped action: drop a `*.json` next to `cnrMapping.json` and register it in `MAPPING_CONFIGS` in `background.js`.
 
-### `extension/` is duplicated — be careful
+### `extension/` — single source of truth
 
-There are **two** extension trees:
-- `extension/` (repo root) — the dev/load-unpacked copy referenced by the README.
-- `CourtMetaAPI/extension/` — the copy the csproj's `BundleExtension` target consumes (`<ExtensionFiles Include="extension\**\*" />` is **relative to the csproj directory**), which is then copied to `CourtMetaAPI/wwwroot/extension/` and zipped into `wwwroot/court-meta-extension.zip` for the installer to ship.
+There is **one** extension tree at the repo root: `extension/`. Both the dev load-unpacked workflow and the installer-packaged build read from it.
 
-When changing extension code, **edit both trees** (the recent git history shows them changing in lockstep) or the dev-loaded extension and the installer-packaged one will diverge. There is no symlink or build-time copy from root → CourtMetaAPI yet.
+The csproj's `BundleExtension` target (`CourtMetaAPI/CourtMetaAPI.csproj`) sets `<ExtensionSourceDir>$(MSBuildProjectDirectory)\..\extension</ExtensionSourceDir>` and copies/zips from there into `CourtMetaAPI/wwwroot/extension/` + `wwwroot/court-meta-extension.zip` on every build.
+
+A previous duplicate at `CourtMetaAPI/extension/` was deleted because it kept silently drifting. Do not reintroduce it — edit only `extension/`.
 
 ### Distribution pipeline
 

@@ -19,9 +19,8 @@
   </ItemGroup>
 
   <!--
-    Extension source = single tree at repo-root \extension\.
-    Previously this csproj kept a second copy under CourtMetaAPI\extension\ which
-    repeatedly drifted. It now consumes the root copy directly.
+    Extension source = single tree at repo-root \extension\. Do not introduce a
+    second copy under CourtMetaAPI\ — every previous attempt drifted.
   -->
   <PropertyGroup>
     <ExtensionSourceDir>$(MSBuildProjectDirectory)\..\extension</ExtensionSourceDir>

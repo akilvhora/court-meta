@@ -1,6 +1,6 @@
 {
   "$schema": "./cnrMapping.schema.json",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "name": "ecourts.cnr.v1",
   "description": "Maps eCourts CNR API response to Court Meta refined JSON",
   "root": "data",
@@ -9,9 +9,23 @@
     "caseNumber": { "rule": "exact", "path": "caseNumber" },
     "petitioner": { "rule": "exact", "path": "history.pet_name", "transforms": ["trim", "nullIfEmpty"] },
     "respondant": { "rule": "exact", "path": "history.res_name", "transforms": ["trim", "nullIfEmpty"] },
+    "petitionerAdvocate": { "rule": "exact", "path": "history.pet_adv", "transforms": ["trim", "nullIfEmpty"] },
+    "respondantAdvocate": { "rule": "exact", "path": "history.res_adv", "transforms": ["trim", "nullIfEmpty"] },
     "filing.number": { "rule": "exact", "path": "history.fil_no" },
     "filing.year":   { "rule": "exact", "path": "history.fil_year" },
     "filing.date":   { "rule": "exact", "path": "history.date_of_filing", "transforms": [{ "fn": "toDate" }] },
+
+    "court.number": {
+      "rule": "coalesce",
+      "sources": [
+        { "rule": "exact", "path": "history.courtno" },
+        { "rule": "exact", "path": "history.court_no" },
+        { "rule": "exact", "path": "history.court_number" }
+      ]
+    },
+    "court.name":     { "rule": "exact", "path": "history.court_name", "transforms": ["trim", "nullIfEmpty"] },
+    "court.district": { "rule": "exact", "path": "history.district_name", "transforms": ["trim", "nullIfEmpty"] },
+    "court.state":    { "rule": "exact", "path": "history.state_name", "transforms": ["trim", "nullIfEmpty"] },
 
     "caseType": {
       "rule": "switch",
@@ -20,45 +34,58 @@
       "default": "Regular Case"
     },
 
+    "judges": {
+      "rule": "list",
+      "source": {
+        "rule": "findArray",
+        "keyPattern": "judge",
+        "rowKeyPattern": "judcode|desgname",
+        "maxDepth": 4
+      },
+      "item": {
+        "judgeCode":   { "rule": "exact", "path": "judcode" },
+        "designation": { "rule": "exact", "path": "desgname", "transforms": ["trim", "nullIfEmpty"] }
+      }
+    },
+
     "hearings": {
       "rule": "list",
       "source": {
         "rule": "findArray",
-        "keyPattern": "hearr?ing",
-        "rowKeyPattern": "date|purpose|judge",
+        "keyPattern": "historyOfCaseHearing|hearr?ing",
+        "rowKeyPattern": "judge|Business|Hearing|Purpose|date|purpose",
         "maxDepth": 4
       },
       "item": {
-        "date": {
-          "rule": "regexKey",
-          "pattern": "^(?!next).*(date|hearing)",
-          "fallbackIndex": 0,
-          "transforms": [{ "fn": "toDate" }]
-        },
-        "purpose": {
-          "rule": "regexKey",
-          "pattern": "^(?!next).*purpose",
-          "fallbackIndex": 1,
-          "transforms": ["trim", "nullIfEmpty"]
-        },
-        "judge": {
+        "historyOfCaseHearing.judge": {
           "rule": "regexKey",
           "pattern": "judge",
           "transforms": ["trim", "nullIfEmpty"]
         },
-        "business": {
-          "rule": "regexKey",
-          "pattern": "business",
+        "historyOfCaseHearing.Business on Date": {
+          "rule": "coalesce",
+          "sources": [
+            { "rule": "exact",    "path": "viewBusiness" },
+            { "rule": "regexKey", "pattern": "view.*business" },
+            { "rule": "regexKey", "pattern": "business.*on.*date" },
+            { "rule": "regexKey", "pattern": "business" }
+          ],
           "transforms": ["trim", "nullIfEmpty"]
         },
-        "nextDate": {
-          "rule": "regexKey",
-          "pattern": "next.*date",
+        "historyOfCaseHearing.Hearing Date": {
+          "rule": "coalesce",
+          "sources": [
+            { "rule": "regexKey", "pattern": "hearing.*date" },
+            { "rule": "regexKey", "pattern": "^(?!next).*(date|hearing)", "fallbackIndex": 0 }
+          ],
           "transforms": [{ "fn": "toDate" }]
         },
-        "nextPurpose": {
-          "rule": "regexKey",
-          "pattern": "next.*purpose",
+        "historyOfCaseHearing.Purpose of Hearing": {
+          "rule": "coalesce",
+          "sources": [
+            { "rule": "regexKey", "pattern": "purpose.*hearing" },
+            { "rule": "regexKey", "pattern": "^(?!next).*purpose", "fallbackIndex": 1 }
+          ],
           "transforms": ["trim", "nullIfEmpty"]
         }
       }
