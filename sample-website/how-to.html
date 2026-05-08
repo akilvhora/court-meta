@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Court Meta – Integration Guide</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .howto-nav {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px 16px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+    .howto-nav a {
+      color: #1a56db;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 6px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 999px;
+      background: white;
+    }
+    .howto-nav a:hover { background: #ebf5ff; border-color: #1a56db; }
+
+    .howto-container { max-width: 980px; }
+
+    .howto-toc {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 20px;
+    }
+    .howto-toc h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #718096;
+      margin-bottom: 10px;
+    }
+    .howto-toc ol {
+      margin-left: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 4px 20px;
+      font-size: 14px;
+    }
+    .howto-toc a { color: #2d3748; text-decoration: none; }
+    .howto-toc a:hover { color: #1a56db; text-decoration: underline; }
+
+    .howto-section {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+    }
+    .howto-section > h2 {
+      font-size: 18px;
+      color: #1a202c;
+      margin-bottom: 4px;
+    }
+    .howto-section > .lede {
+      color: #4a5568;
+      margin-bottom: 14px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .howto-section h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #1a56db;
+      margin: 18px 0 8px;
+      font-weight: 700;
+    }
+    .howto-section p { margin-bottom: 10px; line-height: 1.6; color: #2d3748; }
+    .howto-section ol, .howto-section ul {
+      margin: 6px 0 12px 22px;
+      line-height: 1.65;
+      color: #2d3748;
+    }
+    .howto-section li { margin-bottom: 4px; }
+    .howto-section li code,
+    .howto-section p code,
+    .howto-section dd code {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-size: 12.5px;
+      color: #1a56db;
+      font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+    }
+    .howto-section pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 6px;
+      padding: 14px 16px;
+      font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      white-space: pre;
+      overflow: auto;
+      margin: 6px 0 14px;
+    }
+    .howto-section pre .c { color: #94a3b8; font-style: italic; }
+    .howto-section pre .k { color: #f472b6; }
+    .howto-section pre .s { color: #86efac; }
+    .howto-section pre .n { color: #fbbf24; }
+
+    .howto-tip {
+      background: #ebf8ff;
+      border: 1px solid #bee3f8;
+      border-left: 3px solid #1a56db;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #2a4365;
+      margin: 10px 0 14px;
+      line-height: 1.6;
+    }
+    .howto-warn {
+      background: #fffaf0;
+      border: 1px solid #feebc8;
+      border-left: 3px solid #dd6b20;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #7b341e;
+      margin: 10px 0 14px;
+      line-height: 1.6;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .pill-known { background: #c6f6d5; color: #22543d; }
+    .pill-browse { background: #bee3f8; color: #2a4365; }
+    .pill-search { background: #feebc8; color: #7b341e; }
+    .pill-bulk { background: #e9d8fd; color: #553c9a; }
+    .pill-drill { background: #fbb6ce; color: #702459; }
+
+    .step {
+      counter-reset: step;
+      list-style: none;
+      margin-left: 0 !important;
+    }
+    .step > li {
+      counter-increment: step;
+      position: relative;
+      padding: 6px 0 6px 36px;
+      margin-bottom: 6px;
+    }
+    .step > li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0; top: 6px;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: #1a56db;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 8px 0 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .api-table th {
+      background: #f7fafc;
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #718096;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .api-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #edf2f7;
+      vertical-align: top;
+    }
+    .api-table td:first-child {
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 12px;
+      color: #1a56db;
+      white-space: nowrap;
+    }
+    .api-table tr:last-child td { border-bottom: none; }
+
+    .anchor-h2 { scroll-margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div>
+      <h1>Court Meta — Integration Guide</h1>
+      <div class="subtitle">Embed eCourts case search in your own website</div>
+    </div>
+  </header>
+
+  <nav class="howto-nav">
+    <a href="#overview">Overview</a>
+    <a href="#setup">Setup</a>
+    <a href="#detect">Detecting the extension</a>
+    <a href="#workflow-cnr">CNR lookup</a>
+    <a href="#workflow-browser">Browse courts</a>
+    <a href="#workflow-case">Case number</a>
+    <a href="#workflow-filing">Filing number</a>
+    <a href="#workflow-causelist">Cause list</a>
+    <a href="#workflow-advocate">Advocate</a>
+    <a href="#drilldowns">Drill-downs</a>
+    <a href="#errors">Errors</a>
+    <a href="#reference">API reference</a>
+  </nav>
+
+  <div class="container howto-container">
+
+    <!-- ── TOC ───────────────────────────────────────────────────────────── -->
+    <div class="howto-toc">
+      <h2>What you&rsquo;ll find here</h2>
+      <ol>
+        <li><a href="#overview">How Court Meta fits into your site</a></li>
+        <li><a href="#setup">Setup &mdash; install + drop in the JS</a></li>
+        <li><a href="#detect">Detecting the extension on page load</a></li>
+        <li><a href="#workflow-cnr">Workflow A &mdash; Lookup a case by CNR</a></li>
+        <li><a href="#workflow-browser">Workflow B &mdash; Browse the court hierarchy</a></li>
+        <li><a href="#workflow-case">Workflow C &mdash; Search by case number</a></li>
+        <li><a href="#workflow-filing">Workflow D &mdash; Search by filing number</a></li>
+        <li><a href="#workflow-causelist">Workflow E &mdash; Daily cause list</a></li>
+        <li><a href="#workflow-advocate">Workflow F &mdash; Search by advocate (single + streaming)</a></li>
+        <li><a href="#drilldowns">Workflow G &mdash; Drill-downs from a CNR</a></li>
+        <li><a href="#errors">Error handling</a></li>
+        <li><a href="#reference">Full API reference</a></li>
+      </ol>
+    </div>
+
+    <!-- ── Overview ──────────────────────────────────────────────────────── -->
+    <section class="howto-section" id="overview">
+      <h2 class="anchor-h2">How Court Meta fits into your site</h2>
+      <p class="lede">Court Meta is a Chrome extension and a local Windows service that together expose Indian eCourts data to any web page the user opens. Your site never talks to eCourts directly &mdash; you talk to a tiny JavaScript bridge that hands requests off to the extension, which talks to the local service, which talks to eCourts.</p>
+
+      <pre>your-page.html
+   │
+   │   includes &lt;script src="court-meta.js"&gt;
+   │
+   ▼
+CourtMeta.fetchStates()      &larr;  promise-based JS API
+   │
+   │   window.postMessage
+   ▼
+content.js  ──&gt;  background.js  ──&gt;  http://localhost:5000  ──&gt;  eCourts</pre>
+
+      <p>What this means for you as an integrator:</p>
+      <ul>
+        <li>Your site can be hosted anywhere &mdash; the bridge works regardless of origin, because it&rsquo;s the user&rsquo;s extension making the network calls, not your page.</li>
+        <li>You don&rsquo;t need API keys, CORS configuration, or a backend proxy.</li>
+        <li>If the user doesn&rsquo;t have the extension installed, every call rejects &mdash; you&rsquo;re responsible for showing an install prompt. See <a href="#detect">Detecting the extension</a>.</li>
+      </ul>
+    </section>
+
+    <!-- ── Setup ─────────────────────────────────────────────────────────── -->
+    <section class="howto-section" id="setup">
+      <h2 class="anchor-h2">Setup</h2>
+      <p class="lede">Two pieces &mdash; one for the user (install once), one for you (drop in a script).</p>
+
+      <h3>1. The user installs Court Meta</h3>
+      <p>Hand them <a href="court-meta-extension.zip" download>court-meta-extension.zip</a> with these instructions:</p>
+      <ol class="step">
+        <li>Unzip to a folder you won&rsquo;t move (Chrome remembers the path).</li>
+        <li>Open <code>chrome://extensions</code> and turn on <strong>Developer mode</strong>.</li>
+        <li>Click <strong>Load unpacked</strong> and select the unzipped folder.</li>
+        <li>If you also installed the Windows installer, the local <code>Court Meta API</code> service is already running. If not, the extension will tell them.</li>
+      </ol>
+
+      <h3>2. Include the bridge in your page</h3>
+      <pre>&lt;!-- somewhere before your app code --&gt;
+&lt;script src="https://localhost:5000/court-meta.js"&gt;&lt;/script&gt;</pre>
+
+      <p>Or copy <code>court-meta.js</code> to your own server and serve it from there &mdash; the file is self-contained, has no dependencies, and only uses <code>window.postMessage</code>.</p>
+
+      <div class="howto-tip">
+        <strong>It&rsquo;s a single global.</strong> Including the script defines <code>window.CourtMeta</code>. Every method returns a Promise.
+      </div>
+    </section>
+
+    <!-- ── Detect ────────────────────────────────────────────────────────── -->
+    <section class="howto-section" id="detect">
+      <h2 class="anchor-h2">Detecting the extension on page load</h2>
+      <p class="lede">Always call <code>CourtMeta.ready()</code> first. It resolves when the extension answers the handshake (usually within ~50&nbsp;ms) or rejects after a timeout if the extension is missing.</p>
+
+      <pre>CourtMeta.ready()
+  .then(() =&gt; {
+    <span class="c">// extension is installed and the local service is reachable</span>
+    enableSearchUi();
+  })
+  .catch(() =&gt; {
+    <span class="c">// not installed — show an install banner</span>
+    showInstallBanner();
+  });</pre>
+
+      <p>Pass a custom timeout if you want to wait longer than the default 2&nbsp;000&nbsp;ms:</p>
+      <pre>CourtMeta.ready(5000).then(...);</pre>
+
+      <div class="howto-tip">
+        <strong>You don&rsquo;t need to call <code>ready()</code> before every method.</strong> Each API call internally awaits readiness and rejects with the same &ldquo;extension not detected&rdquo; error if it never arrives. But calling <code>ready()</code> upfront lets you swap UI states (install banner vs. real form) before the user clicks anything.
+      </div>
+    </section>
+
+    <!-- ── Workflow A: CNR ───────────────────────────────────────────────── -->
+    <section class="howto-section" id="workflow-cnr">
+      <h2 class="anchor-h2">Workflow A · Lookup a case by CNR<span class="pill pill-known">If you have the CNR</span></h2>
+      <p class="lede">A CNR is the 16-character national identifier for an Indian court case (e.g. <code>MHPU010001232022</code>). It uniquely resolves to one case, so this is the fastest path when your user already has one.</p>
+
+      <h3>Use <code>cnrBundle</code> for new code</h3>
+      <pre>const cino = 'MHPU010001232022';
+
+CourtMeta.cnrBundle(cino)
+  .then(bundle =&gt; {
+    <span class="c">// bundle has: caseInfo, parties, advocates, court,</span>
+    <span class="c">// filing, hearings, transfers, processes, orders</span>
+    console.log(bundle.caseInfo.title);
+    bundle.hearings.forEach(h =&gt; console.log(h.date, h.purpose));
+  })
+  .catch(err =&gt; alert(err.message));</pre>
+
+      <h3>Form pattern</h3>
+      <pre>cnrInput.addEventListener('keydown', e =&gt; {
+  if (e.key !== 'Enter') return;
+  const cino = cnrInput.value.trim().toUpperCase();
+  if (cino.length &lt; 16) return showError('CNR must be at least 16 characters');
+
+  setLoading(true);
+  CourtMeta.cnrBundle(cino)
+    .then(renderCase)
+    .catch(err =&gt; showError(err.message))
+    .finally(() =&gt; setLoading(false));
+});</pre>
+
+      <div class="howto-tip">
+        <code>cnrSearch</code> still exists and returns the legacy raw history blob alongside a parsed view. Prefer <code>cnrBundle</code> &mdash; it returns the structured shape directly with no envelope to unwrap.
+      </div>
+    </section>
+
+    <!-- ── Workflow B: Browser ───────────────────────────────────────────── -->
+    <section class="howto-section" id="workflow-browser">
+      <h2 class="anchor-h2">Workflow B · Browse the court hierarchy<span class="pill pill-browse">Cascading dropdowns</span></h2>
+      <p class="lede">Use this when your user doesn&rsquo;t know a specific case but wants to drill into a state, district, or court room. Every other search workflow needs a complex picked from this hierarchy, so this pattern is reused everywhere.</p>
+
+      <h3>The four levels</h3>
+      <pre>States       =&gt; CourtMeta.fetchStates()
+Districts    =&gt; CourtMeta.fetchDistricts(state_code)
+Complexes    =&gt; CourtMeta.fetchComplexes(state_code, dist_code)
+Court rooms  =&gt; CourtMeta.fetchCourts(state_code, dist_code, court_code)</pre>
+
+      <h3>Wiring three cascading <code>&lt;select&gt;</code>s</h3>
+      <pre>CourtMeta.fetchStates().then(({ states }) =&gt; {
+  fillSelect(stateEl, states, s =&gt; [s.state_code, s.state_name]);
+});
+
+stateEl.addEventListener('change', () =&gt; {
+  resetSelect(districtEl);
+  resetSelect(complexEl);
+  if (!stateEl.value) return;
+
+  CourtMeta.fetchDistricts(stateEl.value).then(({ districts }) =&gt; {
+    fillSelect(districtEl, districts, d =&gt; [d.dist_code, d.dist_name]);
+  });
+});
+
+districtEl.addEventListener('change', () =&gt; {
+  resetSelect(complexEl);
+  if (!districtEl.value) return;
+
+  CourtMeta.fetchComplexes(stateEl.value, districtEl.value).then(({ complexes }) =&gt; {
+    fillSelect(complexEl, complexes, c =&gt; [c.njdg_est_code, c.court_complex_name]);
+  });
+});</pre>
+
+      <div class="howto-warn">
+        <strong>Use <code>njdg_est_code</code>, not <code>complex_code</code>.</strong> Every downstream workflow (case search, filing search, cause list, advocate, court rooms) takes the establishment code, which is the <code>njdg_est_code</code> field.
+      </div>
+    </section>
+
+    <!-- ── Workflow C: Case Number ───────────────────────────────────────── -->
+    <section class="howto-section" id="workflow-case">
+      <h2 class="anchor-h2">Workflow C · Search by case number<span class="pill pill-search">Type + number + year</span></h2>
+      <p class="lede">Use this when the user has registration details (e.g. &ldquo;C.S. No. 123 of 2024&rdquo;) but no CNR. The result is every case in the selected complex that matches.</p>
+
+      <h3>1. Load case types for the chosen complex</h3>
+      <p>Case types vary per complex &mdash; load them lazily once a complex is selected:</p>
+      <pre>CourtMeta.fetchCaseTypes({
+  state_code, dist_code, court_code <span class="c">// court_code = njdg_est_code</span>
+}).then(({ caseTypes }) =&gt; {
+  caseTypes.forEach(t =&gt; addOption(caseTypeEl, t.id, t.name));
+});</pre>
+
+      <h3>2. Run the search</h3>
+      <pre>CourtMeta.searchByCaseNumber({
+  state_code, dist_code,
+  courts: court_code,         <span class="c">// or 'CODE1,CODE2' to search multiple</span>
+  case_type, number, year
+}).then(({ count, results }) =&gt; {
+  console.log(`${count} cases`);
+  results.forEach(r =&gt; render(r.cino, r.case_no, r.petnameadArr));
+});</pre>
+
+      <div class="howto-warn">
+        <strong>Case-type IDs aren&rsquo;t portable.</strong> The same label (&ldquo;C.S.&rdquo;) maps to different IDs in different complexes &mdash; always re-fetch when the complex changes.
+      </div>
+    </section>
+
+    <!-- ── Workflow D: Filing ────────────────────────────────────────────── -->
+    <section class="howto-section" id="workflow-filing">
+      <h2 class="anchor-h2">Workflow D · Search by filing number<span class="pill pill-search">Pre-registration</span></h2>
+      <p class="lede">A filing number is what a case is given when it&rsquo;s first lodged but before it&rsquo;s registered. Use this when the matter hasn&rsquo;t been numbered yet, or you only have the filing receipt.</p>
+
+      <pre>CourtMeta.searchByFilingNumber({
+  state_code, dist_code,
+  courts: court_code,
+  filingNumber, year
+}).then(({ count, results }) =&gt; {
+  results.forEach(r =&gt; render(r.cino, r.case_no, r.petnameadArr));
+});</pre>
+
+      <p>The response shape is identical to <code>searchByCaseNumber</code> &mdash; reuse the same row-renderer.</p>
+    </section>
+
+    <!-- ── Workflow E: Cause List ────────────────────────────────────────── -->
+    <section class="howto-section" id="workflow-causelist">
+      <h2 class="anchor-h2">Workflow E · Cause list for a court room<span class="pill pill-browse">Daily docket</span></h2>
+      <p class="lede">A cause list is the schedule of cases listed before a particular court room on a particular date. Use this to render a docket view for a judge&rsquo;s today (or any day).</p>
+
+      <pre>CourtMeta.causeList({
+  state_code, dist_code, court_code,    <span class="c">// the complex (njdg_est_code)</span>
+  court_no,                              <span class="c">// from fetchCourts(...)</span>
+  date: '15-04-2026',                    <span class="c">// dd-mm-yyyy or yyyy-mm-dd</span>
+  flag: 'civ_t'                          <span class="c">// 'civ_t' = civil, 'cri_t' = criminal</span>
+}).then(({ count, rows }) =&gt; {
+  rows.filter(r =&gt; !r.isHeader).forEach(r =&gt; {
+    if (r.cino) {
+      <span class="c">// row carries a CNR — open the bundle directly</span>
+      renderRow(r.cino, r.cells);
+    } else {
+      <span class="c">// row only has caseNo + courtCode — resolve to a CNR first</span>
+      renderUnresolvedRow(r.caseNo, r.courtCode, r.cells);
+    }
+  });
+});</pre>
+
+      <h3>Resolving a cause-list row to a CNR</h3>
+      <p>Some cause-list rows don&rsquo;t carry a CNR &mdash; they only carry the upstream&rsquo;s internal case-number plus an establishment code. To open the bundle, resolve them first:</p>
+      <pre>CourtMeta.cnrByCaseNo({
+  state_code, dist_code,
+  court_code: row.courtCode,    <span class="c">// note: row's own court_code, not the complex's</span>
+  case_no: row.caseNo
+}).then(({ cino, data }) =&gt; {
+  <span class="c">// data is already the parsed CaseBundle — no need to call cnrBundle again</span>
+  renderCase(data);
+});</pre>
+    </section>
+
+    <!-- ── Workflow F: Advocate ──────────────────────────────────────────── -->
+    <section class="howto-section" id="workflow-advocate">
+      <h2 class="anchor-h2">Workflow F · Search by advocate<span class="pill pill-bulk">Single or state-wide</span></h2>
+      <p class="lede">One method, two scopes. The same call shape switches between a single round-trip and a streaming fan-out depending on <code>scope</code>.</p>
+
+      <h3>Single court complex (synchronous)</h3>
+      <pre>CourtMeta.searchByAdvocate({
+  scope: 'court',
+  state_code, dist_code,
+  courts: court_code,                <span class="c">// or 'CODE1,CODE2,...'</span>
+  mode: 'name',                      <span class="c">// or 'barcode'</span>
+  advocateName: 'John Doe',
+  pendingDisposed: 'Pending'         <span class="c">// 'Pending' | 'Disposed' | 'Both'</span>
+}).then(({ count, results }) =&gt; {
+  results.forEach(r =&gt; render(r.cino, r.petnameadArr));
+});</pre>
+
+      <p>Bar-code variant:</p>
+      <pre>CourtMeta.searchByAdvocate({
+  scope: 'court',
+  state_code, dist_code, courts,
+  mode: 'barcode',
+  barstatecode: '1',
+  barcode: 'MAH/12345/2010'
+});</pre>
+
+      <h3>State-wide (live stream)</h3>
+      <p>For state-wide search, the extension fans out to every district and streams results back. You supply an <code>onProgress</code> callback that fires as each district completes:</p>
+      <pre>const aggregated = [];
+const seen = new Set();
+
+CourtMeta.searchByAdvocate({
+  scope: 'state',
+  state_code: 'MH',
+  mode: 'name',
+  advocateName: 'John Doe',
+  pendingDisposed: 'Pending',
+
+  onProgress(event) {
+    if (event.type === 'start') {
+      showStatus(`Searching ${event.totalDistricts} districts...`);
+    }
+    if (event.type === 'progress') {
+      <span class="c">// dedupe across districts — same case can appear twice</span>
+      for (const row of (event.rows || [])) {
+        if (row.cino &amp;&amp; !seen.has(row.cino)) {
+          seen.add(row.cino);
+          aggregated.push(row);
+        }
+      }
+      showStatus(
+        `${event.completedDistricts} / ${event.totalDistricts} districts ` +
+        `— ${aggregated.length} cases so far`
+      );
+      renderResults(aggregated);
+    }
+    if (event.type === 'complete') {
+      showStatus(`Done — ${aggregated.length} cases.`);
+    }
+  }
+}).then(({ progressCount }) =&gt; {
+  <span class="c">// resolves once the trailing 'done' event fires</span>
+  console.log('stream finished after', progressCount, 'progress events');
+}).catch(err =&gt; {
+  <span class="c">// fatal stream errors land here; per-district errors come through</span>
+  <span class="c">// onProgress as event.error and are non-fatal</span>
+  showError(err.message);
+});</pre>
+
+      <div class="howto-warn">
+        State-wide search hits dozens of districts and can take minutes. Render results incrementally &mdash; don&rsquo;t hide them behind a spinner.
+      </div>
+    </section>
+
+    <!-- ── Workflow G: Drill-downs ──────────────────────────────────────── -->
+    <section class="howto-section" id="drilldowns">
+      <h2 class="anchor-h2">Workflow G · Drill-downs from a CaseBundle<span class="pill pill-drill">Hearings, orders, applications</span></h2>
+      <p class="lede">Once you have a CaseBundle, every nested row points at a deeper API. These four helpers cover the drill-downs you&rsquo;ll actually wire into UI.</p>
+
+      <h3>Business notes for a hearing</h3>
+      <p>Click on a row in <code>bundle.hearings</code> to see what the court actually recorded that day:</p>
+      <pre>CourtMeta.cnrBusiness({
+  state_code, dist_code, court_code,
+  case_number: bundle.caseInfo.caseNumber,
+  hearingDate: hearing.date,           <span class="c">// dd-mm-yyyy</span>
+  disposalFlag: hearing.disposalFlag,
+  courtNo: hearing.courtNo
+}).then(business =&gt; renderBusinessNote(business));</pre>
+
+      <h3>Application / writ detail</h3>
+      <pre>CourtMeta.cnrWrit({
+  state_code, dist_code, court_code,
+  case_number,
+  app_cs_no: application.appCsNo
+}).then(detail =&gt; renderApplicationDetail(detail));</pre>
+
+      <h3>Order PDF</h3>
+      <p>Resolves to a data URL you can drop straight into an <code>&lt;iframe&gt;</code> or download anchor &mdash; no extra fetch needed:</p>
+      <pre>CourtMeta.cnrOrderPdf({
+  state_code, dist_code, court_code,
+  orderYr: order.year,
+  order_id: order.id,
+  crno: order.crno
+}).then(({ dataUrl, mime, size }) =&gt; {
+  document.querySelector('iframe.preview').src = dataUrl;
+  <span class="c">// or, for a download:</span>
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = `order-${order.id}.pdf`;
+  a.click();
+});</pre>
+    </section>
+
+    <!-- ── Errors ────────────────────────────────────────────────────────── -->
+    <section class="howto-section" id="errors">
+      <h2 class="anchor-h2">Error handling</h2>
+      <p class="lede">Every method rejects with an <code>Error</code> &mdash; the message is safe to display to users.</p>
+
+      <h3>The errors you&rsquo;ll actually see</h3>
+      <table class="api-table">
+        <thead><tr><th>Message</th><th>What it means</th><th>What to do</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Court Meta extension not detected.&hellip;</td>
+            <td>Extension not installed, or page loaded before the content script did.</td>
+            <td>Show an install banner with the unzip + load-unpacked steps.</td>
+          </tr>
+          <tr>
+            <td>Court Meta extension is out of date&hellip;</td>
+            <td>Old extension build is still installed (Chrome doesn&rsquo;t auto-replace same-version unpacked builds).</td>
+            <td>Tell the user to open <code>chrome://extensions</code>, click <em>reload</em> on Court Meta, then refresh the page.</td>
+          </tr>
+          <tr>
+            <td>Request timed out (action: &hellip;)</td>
+            <td>30 s passed with no response. Usually the local Windows service is stopped.</td>
+            <td>Tell the user to open <code>services.msc</code> and start <code>Court Meta API</code>.</td>
+          </tr>
+          <tr>
+            <td>Upstream eCourts errors</td>
+            <td>Anything else is propagated from eCourts (e.g. invalid CNR, no results).</td>
+            <td>Show the message inline next to the form field.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Recommended pattern</h3>
+      <pre>function callApi(promise, { onSuccess, onError }) {
+  return promise
+    .then(onSuccess)
+    .catch(err =&gt; {
+      const msg = err.message || 'Unknown error';
+      if (msg.includes('not detected')) {
+        showInstallBanner();
+      } else if (msg.includes('out of date')) {
+        showReloadInstructions();
+      } else {
+        onError(msg);
+      }
+    });
+}</pre>
+    </section>
+
+    <!-- ── Reference ────────────────────────────────────────────────────── -->
+    <section class="howto-section" id="reference">
+      <h2 class="anchor-h2">API reference</h2>
+      <p class="lede">Every method is on the global <code>CourtMeta</code> object and returns a Promise.</p>
+
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Resolves with</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>ready(timeoutMs?)</td>
+            <td><code>void</code> — rejects if the extension doesn&rsquo;t answer within the timeout (default 2&nbsp;000&nbsp;ms).</td>
+          </tr>
+          <tr>
+            <td>fetchStates()</td>
+            <td><code>{ states: [{ state_code, state_name }, ...] }</code></td>
+          </tr>
+          <tr>
+            <td>fetchDistricts(state_code)</td>
+            <td><code>{ districts: [{ dist_code, dist_name }, ...] }</code></td>
+          </tr>
+          <tr>
+            <td>fetchComplexes(state_code, dist_code)</td>
+            <td><code>{ complexes: [{ njdg_est_code, court_complex_name, ... }, ...] }</code></td>
+          </tr>
+          <tr>
+            <td>fetchCourts(state_code, dist_code, court_code)</td>
+            <td><code>{ courts: [{ code, name, isHeader }, ...] }</code> — court_code here is the <code>njdg_est_code</code>.</td>
+          </tr>
+          <tr>
+            <td>cnrSearch(cino)</td>
+            <td>Legacy. <code>{ parsed, raw }</code>.</td>
+          </tr>
+          <tr>
+            <td>cnrBundle(cino)</td>
+            <td>Structured CaseBundle: <code>caseInfo</code>, <code>parties</code>, <code>advocates</code>, <code>court</code>, <code>filing</code>, <code>hearings</code>, <code>transfers</code>, <code>processes</code>, <code>orders</code>.</td>
+          </tr>
+          <tr>
+            <td>cnrByCaseNo({ state_code, dist_code, court_code, case_no })</td>
+            <td><code>{ cino, data }</code> &mdash; <code>data</code> is the same shape as <code>cnrBundle</code>.</td>
+          </tr>
+          <tr>
+            <td>cnrBusiness({ ..., case_number, hearingDate, disposalFlag, courtNo })</td>
+            <td>Business note for one hearing.</td>
+          </tr>
+          <tr>
+            <td>cnrWrit({ ..., case_number, app_cs_no })</td>
+            <td>Application / writ detail.</td>
+          </tr>
+          <tr>
+            <td>cnrOrderPdf({ ..., orderYr, order_id, crno })</td>
+            <td><code>{ dataUrl, mime, size }</code> &mdash; the <code>dataUrl</code> drops straight into an <code>iframe.src</code> or anchor <code>href</code>.</td>
+          </tr>
+          <tr>
+            <td>fetchCaseTypes({ state_code, dist_code, court_code })</td>
+            <td><code>{ caseTypes: [{ id, name }, ...] }</code> &mdash; cached server-side.</td>
+          </tr>
+          <tr>
+            <td>searchByCaseNumber({ state_code, dist_code, courts, case_type, number, year })</td>
+            <td><code>{ count, results: [{ cino, case_no, type_name, reg_year, petnameadArr, establishment_name, ... }, ...], raw }</code></td>
+          </tr>
+          <tr>
+            <td>searchByFilingNumber({ state_code, dist_code, courts, filingNumber, year })</td>
+            <td>Same shape as <code>searchByCaseNumber</code>.</td>
+          </tr>
+          <tr>
+            <td>causeList({ state_code, dist_code, court_code, court_no, date, flag, selprevdays })</td>
+            <td><code>{ count, html, rows: [{ index, isHeader, cino?, caseNo?, courtCode?, cells: [...] }, ...] }</code></td>
+          </tr>
+          <tr>
+            <td>searchByAdvocate({ scope: 'court' &#124; 'state', mode, ..., onProgress? })</td>
+            <td><code>scope: 'court'</code> &rarr; <code>{ count, results, raw }</code>. <code>scope: 'state'</code> &rarr; <code>{ progressCount }</code> after final <code>done</code> event; rows arrive via <code>onProgress</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="howto-tip">
+        Need to inspect a request shape live? Open DevTools on a page with <code>court-meta.js</code> loaded, run a method, and the extension logs the round-trip to its own service-worker console (<code>chrome://extensions</code> &rarr; Court Meta &rarr; <em>Inspect views: service worker</em>).
+      </div>
+    </section>
+
+  </div><!-- /container -->
+
+</body>
+</html>
