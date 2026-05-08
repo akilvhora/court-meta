@@ -50,12 +50,12 @@
 
     "additionalPetitioners": {
       "rule": "exact",
-      "path": "str_error",
+      "path": "history.str_error",
       "transforms": [{ "fn": "parseAdvocateList" }]
     },
     "additionalRespondents": {
       "rule": "exact",
-      "path": "str_error1",
+      "path": "history.str_error1",
       "transforms": [{ "fn": "parseAdvocateList" }]
     },
 
