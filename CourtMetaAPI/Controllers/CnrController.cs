@@ -103,6 +103,8 @@ public class CnrController : ControllerBase
         if (history == null)
             return NotFound(new { success = false, error = "Case history not found for this case_no." });
 
+        HistoryHtmlExpander.Expand(history);
+
         var cino = ExtractCino(history);
         if (string.IsNullOrEmpty(cino))
             return Ok(new { success = false, error = "Case history returned without a CNR.", history });
@@ -302,6 +304,7 @@ public class CnrController : ControllerBase
             if (fhistory == null)
                 return (null, null, NotFound(new { success = false, error = "Filing case history not found for this CNR." }));
 
+            HistoryHtmlExpander.Expand(fhistory);
             return ("filing", fhistory, null);
         }
 
@@ -320,6 +323,7 @@ public class CnrController : ControllerBase
         if (caseHistory == null)
             return (null, null, NotFound(new { success = false, error = "Case history not found for this CNR." }));
 
+        HistoryHtmlExpander.Expand(caseHistory);
         return ("case", caseHistory, null);
     }
 
