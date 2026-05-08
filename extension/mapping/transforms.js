@@ -8,8 +8,28 @@ const TRANSFORMS = {
   nullIfEmpty: (v) => (v === '' || v === undefined ? null : v),
   default:     (v, opts) => (v == null ? opts.value : v),
   toDate:      (v, opts) => normalizeDate(v, opts),
-  parseAdvocateList: (v) => parseAdvocateList(v)
+  parseAdvocateList: (v) => parseAdvocateList(v),
+  parseActTable:     (v) => parseActTable(v)
 };
+
+// Extracts the text of the last <td> in an HTML table and comma-splits it.
+// data.history.act arrives as an HTML <table>; the act/section names sit in
+// the final cell as a comma-separated list. Returns [] when the input is
+// missing, contains no <td>, or the last cell is empty.
+function parseActTable(v) {
+  if (v == null) return [];
+  const html = String(v);
+  const cells = [...html.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)];
+  if (!cells.length) return [];
+  const text = cells[cells.length - 1][1]
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return [];
+  return text.split(',').map((s) => s.trim()).filter(Boolean);
+}
 
 // Parses eCourts str_error / str_error1 strings into [{ name, advocateName }].
 // Input is HTML-laced text shaped like:

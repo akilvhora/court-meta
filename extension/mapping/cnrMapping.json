@@ -1,6 +1,6 @@
 {
   "$schema": "./cnrMapping.schema.json",
-  "version": "1.3.0",
+  "version": "1.5.0",
   "name": "ecourts.cnr.v1",
   "description": "Maps eCourts CNR API response to Court Meta refined JSON",
   "root": "data",
@@ -14,6 +14,7 @@
     "filing.number": { "rule": "exact", "path": "history.fil_no" },
     "filing.year":   { "rule": "exact", "path": "history.fil_year" },
     "filing.date":   { "rule": "exact", "path": "history.date_of_filing", "transforms": [{ "fn": "toDate" }] },
+    "filing.act":    { "rule": "exact", "path": "history.act", "transforms": [{ "fn": "parseActTable" }] },
 
     "court.number": {
       "rule": "coalesce",
@@ -91,6 +92,11 @@
             { "rule": "regexKey", "pattern": "business" }
           ],
           "transforms": ["trim", "nullIfEmpty"]
+        },
+        "businessDate": {
+          "rule": "exact",
+          "path": "businessDate",
+          "transforms": [{ "fn": "toDate" }]
         },
         "hearingDate": {
           "rule": "coalesce",
