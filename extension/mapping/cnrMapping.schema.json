@@ -82,13 +82,13 @@
         "oneOf": [
           {
             "type": "string",
-            "enum": ["trim", "upper", "lower", "nullIfEmpty", "toDate"]
+            "enum": ["trim", "upper", "lower", "nullIfEmpty", "toDate", "parseAdvocateList"]
           },
           {
             "type": "object",
             "required": ["fn"],
             "properties": {
-              "fn":    { "type": "string", "enum": ["trim", "upper", "lower", "nullIfEmpty", "default", "toDate"] },
+              "fn":    { "type": "string", "enum": ["trim", "upper", "lower", "nullIfEmpty", "default", "toDate", "parseAdvocateList"] },
               "value": {}
             },
             "additionalProperties": false

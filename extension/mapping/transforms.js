@@ -7,8 +7,47 @@ const TRANSFORMS = {
   lower:       (v) => (typeof v === 'string' ? v.toLowerCase() : v),
   nullIfEmpty: (v) => (v === '' || v === undefined ? null : v),
   default:     (v, opts) => (v == null ? opts.value : v),
-  toDate:      (v, opts) => normalizeDate(v, opts)
+  toDate:      (v, opts) => normalizeDate(v, opts),
+  parseAdvocateList: (v) => parseAdvocateList(v)
 };
+
+// Parses eCourts str_error / str_error1 strings into [{ name, advocateName }].
+// Input is HTML-laced text shaped like:
+//   "1) Petitioner One Advocate - Adv One <br>2) Petitioner Two Advocate - Adv Two"
+// Item boundaries are 1), 2), 3) ...; within each item the name precedes
+// "Advocate -" and the advocate name follows it. Entries missing an
+// "Advocate -" separator still produce a row with advocateName=null.
+function parseAdvocateList(v) {
+  if (v == null) return [];
+  const cleaned = String(v)
+    .replace(/<\s*br\s*\/?\s*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return [];
+
+  const parts = cleaned.split(/\s*\d+\)\s*/).filter((s) => s && s.trim());
+  const out = [];
+  for (const part of parts) {
+    const idx = part.search(/Advocate\s*-/i);
+    let name, advocateName;
+    if (idx === -1) {
+      name = part.trim();
+      advocateName = null;
+    } else {
+      name = part.slice(0, idx).trim();
+      advocateName = part.slice(idx).replace(/^Advocate\s*-\s*/i, '').trim();
+    }
+    if (!name && !advocateName) continue;
+    out.push({
+      name: name || null,
+      advocateName: advocateName || null
+    });
+  }
+  return out;
+}
 
 // Normalise eCourts dates to DD/MM/YYYY (or DD/MM/YY when the input year is 2-digit).
 // Accepts DD-MM-YYYY, DD-MM-YY, D-M-YY(YY), and ISO YYYY-MM-DD,

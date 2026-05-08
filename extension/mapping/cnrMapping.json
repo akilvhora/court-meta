@@ -1,6 +1,6 @@
 {
   "$schema": "./cnrMapping.schema.json",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "name": "ecourts.cnr.v1",
   "description": "Maps eCourts CNR API response to Court Meta refined JSON",
   "root": "data",
@@ -48,6 +48,17 @@
       }
     },
 
+    "additionalPetitioners": {
+      "rule": "exact",
+      "path": "str_error",
+      "transforms": [{ "fn": "parseAdvocateList" }]
+    },
+    "additionalRespondents": {
+      "rule": "exact",
+      "path": "str_error1",
+      "transforms": [{ "fn": "parseAdvocateList" }]
+    },
+
     "hearings": {
       "rule": "list",
       "source": {
@@ -57,12 +68,21 @@
         "maxDepth": 4
       },
       "item": {
-        "historyOfCaseHearing.judge": {
+        "courtNo": {
+          "rule": "coalesce",
+          "sources": [
+            { "rule": "exact",    "path": "court_no" },
+            { "rule": "exact",    "path": "courtno" },
+            { "rule": "regexKey", "pattern": "court.*no" }
+          ],
+          "transforms": ["trim", "nullIfEmpty"]
+        },
+        "judge": {
           "rule": "regexKey",
           "pattern": "judge",
           "transforms": ["trim", "nullIfEmpty"]
         },
-        "historyOfCaseHearing.Business on Date": {
+        "businessOnDate": {
           "rule": "coalesce",
           "sources": [
             { "rule": "exact",    "path": "viewBusiness" },
@@ -72,7 +92,7 @@
           ],
           "transforms": ["trim", "nullIfEmpty"]
         },
-        "historyOfCaseHearing.Hearing Date": {
+        "hearingDate": {
           "rule": "coalesce",
           "sources": [
             { "rule": "regexKey", "pattern": "hearing.*date" },
@@ -80,7 +100,7 @@
           ],
           "transforms": [{ "fn": "toDate" }]
         },
-        "historyOfCaseHearing.Purpose of Hearing": {
+        "purposeOfHearing": {
           "rule": "coalesce",
           "sources": [
             { "rule": "regexKey", "pattern": "purpose.*hearing" },
