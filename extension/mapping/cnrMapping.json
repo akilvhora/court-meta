@@ -1,6 +1,6 @@
 {
   "$schema": "./cnrMapping.schema.json",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "name": "ecourts.cnr.v1",
   "description": "Maps eCourts CNR API response to Court Meta refined JSON",
   "root": "data",
@@ -113,6 +113,28 @@
             { "rule": "regexKey", "pattern": "purpose.*hearing" },
             { "rule": "regexKey", "pattern": "^(?!next).*purpose", "fallbackIndex": 1 }
           ],
+          "transforms": ["trim", "nullIfEmpty"]
+        }
+      }
+    },
+
+    "transferHistory": {
+      "rule": "list",
+      "source": { "rule": "exact", "path": "history.transfer" },
+      "item": {
+        "date": {
+          "rule": "regexKey",
+          "pattern": "transfer.*date|^date$",
+          "transforms": [{ "fn": "toDate" }]
+        },
+        "fromCourt": {
+          "rule": "regexKey",
+          "pattern": "from.*court",
+          "transforms": ["trim", "nullIfEmpty"]
+        },
+        "toCourt": {
+          "rule": "regexKey",
+          "pattern": "to.*court",
           "transforms": ["trim", "nullIfEmpty"]
         }
       }
