@@ -9,8 +9,25 @@ const TRANSFORMS = {
   default:     (v, opts) => (v == null ? opts.value : v),
   toDate:      (v, opts) => normalizeDate(v, opts),
   parseAdvocateList: (v) => parseAdvocateList(v),
-  parseActTable:     (v) => parseActTable(v)
+  parseActTable:     (v) => parseActTable(v),
+  parseFirDetails:   (v) => parseFirDetails(v)
 };
+
+// data.history.fir_details arrives as a caret-separated string in the
+// fixed order: <fir-number>^<police-station>^<year>. Returns null when the
+// input is missing or empty so the field collapses to null rather than an
+// object full of nulls.
+function parseFirDetails(v) {
+  if (v == null) return null;
+  const s = String(v).trim();
+  if (!s) return null;
+  const parts = s.split('^').map((p) => p.trim());
+  return {
+    number:        parts[0] || null,
+    policeStation: parts[1] || null,
+    year:          parts[2] || null
+  };
+}
 
 // Extracts the text of the last <td> in an HTML table and comma-splits it.
 // data.history.act arrives as an HTML <table>; the act/section names sit in
