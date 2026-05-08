@@ -68,7 +68,14 @@ public class SearchController : ControllerBase
             return BadRequest(new { success = false, error = "state_code, dist_code, court_code are required." });
         }
 
-        var key = $"case-types:{state_code}:{dist_code}:{court_code}";
+        // Multi-establishment complexes have njdg_est_code = "2,3" / "21,22,26".
+        // caseNumberWebService.php accepts only a single court_code (search
+        // endpoints take the list as court_code_arr; this one doesn't), so use
+        // the first establishment — case types are uniform across a complex.
+        var commaIdx = court_code.IndexOf(',');
+        var primaryCourtCode = commaIdx > 0 ? court_code[..commaIdx] : court_code;
+
+        var key = $"case-types:{state_code}:{dist_code}:{primaryCourtCode}";
         if (_cache.TryGetValue(key, out IActionResult? cached) && cached is not null)
             return cached;
 
@@ -76,7 +83,7 @@ public class SearchController : ControllerBase
         {
             ["state_code"] = state_code,
             ["dist_code"] = dist_code,
-            ["court_code"] = court_code,
+            ["court_code"] = primaryCourtCode,
             ["language_flag"] = "english",
             ["bilingual_flag"] = "0"
         }, ct: ct);
