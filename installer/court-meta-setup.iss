@@ -233,10 +233,15 @@ begin
 end;
 
 procedure LicenseEditChanged(Sender: TObject);
+var
+  TextValue: string;
 begin
   // Live-validate as the user pastes / types, but don't shell out on every
   // keystroke; only re-run when length looks JWT-shaped (3 dot segments).
-  if (StringChangeEx(LicenseEdit.Text, '.', '.', True) >= 2) then
+  // Copy to a local because StringChangeEx takes its first arg as var, and
+  // LicenseEdit.Text is a property (not a variable).
+  TextValue := LicenseEdit.Text;
+  if (StringChangeEx(TextValue, '.', '.', True) >= 2) then
     UpdateLicenseStatus()
   else
   begin
