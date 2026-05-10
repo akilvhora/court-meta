@@ -40,6 +40,9 @@ pipeline {
                     // Self-contained single-file exe — no .NET runtime required on client
                     bat 'dotnet publish CourtMetaAPI.csproj --configuration Release --output publish\\ --no-build'
                 }
+                // License-verifier helper consumed by the installer's License page.
+                // Self-contained single-file so it runs without a .NET runtime.
+                bat 'dotnet publish tools\\VerifyLicense\\VerifyLicense.csproj --configuration Release --output tools\\VerifyLicense\\publish\\'
             }
         }
 

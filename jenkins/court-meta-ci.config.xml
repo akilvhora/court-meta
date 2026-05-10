@@ -20,7 +20,8 @@
       <configVersion>2</configVersion>
       <userRemoteConfigs>
         <hudson.plugins.git.UserRemoteConfig>
-          <url>https://github.com/akilvhora/court-meta.git</url>
+          <url>git@github.com:akilvhora/court-meta.git</url>
+          <credentialsId>github-ssh</credentialsId>
         </hudson.plugins.git.UserRemoteConfig>
       </userRemoteConfigs>
       <branches>
