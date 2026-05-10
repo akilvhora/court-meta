@@ -135,13 +135,13 @@ begin
   Result := Is64BitInstallMode;
 end;
 
-{
+(*
   License wizard page — paste a JWT or skip for the free tier.
 
   Lives between Select Destination and Ready to Install. The page calls
   cm-license-verify.exe (extracted to {tmp} on demand) to validate the JWT
   before the user advances; valid keys get their summary line displayed.
-}
+*)
 procedure ExtractVerifierToTmp(out VerifierPath: string);
 var
   ResourceName: string;
