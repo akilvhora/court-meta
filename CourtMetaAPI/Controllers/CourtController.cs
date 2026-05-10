@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json.Nodes;
+using CourtMetaAPI.Middleware;
 using CourtMetaAPI.Services;
+using CourtMetaAPI.Services.Endpoints;
+using CourtMetaAPI.Services.Licensing;
 
 namespace CourtMetaAPI.Controllers;
 
@@ -32,15 +35,64 @@ public class CourtController : ControllerBase
     }
 
     // ─── Token status (debug) ─────────────────────────────────────────────────
+    //
+    // Discloses two unrelated bits of state:
+    //   1. eCourts upstream JWT (was the existing behaviour)
+    //   2. customer license JWT (added with the tier system)
+    //
+    // The license catalogue is auth-gated per the design doc: anonymous callers
+    // see only `tokenStatus: missing`, valid callers see granted/available/
+    // missing scopes, expired callers get the catalogue (so they know what to
+    // renew toward).
     [HttpGet("token-status")]
     public async Task<IActionResult> TokenStatus()
     {
-        var token = await _tokenService.GetTokenAsync();
-        if (string.IsNullOrEmpty(token))
-            return Ok(new { success = false, tokenAcquired = false, message = "No token. Check API logs." });
+        var upstream = await _tokenService.GetTokenAsync();
+        var upstreamPreview = string.IsNullOrEmpty(upstream)
+            ? null
+            : upstream.Length > 40 ? upstream[..20] + "…" + upstream[^10..] : upstream;
 
-        var preview = token.Length > 40 ? token[..20] + "…" + token[^10..] : token;
-        return Ok(new { success = true, tokenAcquired = true, tokenPreview = preview });
+        var state = LicenseMiddleware.GetState(HttpContext);
+        var catalog = EndpointRegistry.ParseableScopes().ToArray();
+
+        object licenseBlock = state.Status switch
+        {
+            LicenseStatus.Missing => new { tokenStatus = "missing" },
+            LicenseStatus.Valid   => new
+            {
+                tokenStatus = "valid",
+                customer        = state.Claims!.Subject,
+                expires         = state.Claims.ExpiresAt.ToString("O"),
+                kid             = state.Claims.KeyId,
+                scopesGranted   = state.Claims.Scopes.OrderBy(s => s, StringComparer.Ordinal).ToArray(),
+                scopesAvailable = catalog,
+                scopesMissing   = catalog.Where(s => !state.Claims.HasScope(s)).ToArray()
+            },
+            LicenseStatus.Expired => new
+            {
+                tokenStatus = "expired",
+                reason      = state.Reason,
+                scopesAvailable = catalog
+            },
+            LicenseStatus.Invalid => new
+            {
+                tokenStatus = "invalid",
+                reason      = state.Reason,
+                scopesAvailable = catalog
+            },
+            _ => new { tokenStatus = "missing" }
+        };
+
+        return Ok(new
+        {
+            success = true,
+            upstream = new
+            {
+                tokenAcquired = !string.IsNullOrEmpty(upstream),
+                tokenPreview  = upstreamPreview
+            },
+            license = licenseBlock
+        });
     }
 
     // ─── State Fetch ──────────────────────────────────────────────────────────
@@ -115,6 +167,7 @@ public class CourtController : ControllerBase
 
     // ─── Complex Fetch ───────────────────────────────────────────────────────
     [HttpGet("complexes")]
+    [CourtMetaAPI.Filters.ParseableEndpoint("complexes")]
     public async Task<IActionResult> GetComplexes(
         [FromQuery] string state_code,
         [FromQuery] string dist_code)

@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "complexes": [
+    {
+      "njdg_est_code": "1",
+      "complex_code":  "MH-PUN-A",
+      "court_complex_name":  " Shivaji Nagar Court Complex ",
+      "lcourt_complex_name": ""
+    },
+    {
+      "njdg_est_code": "2,17",
+      "complex_code":  "MH-PUN-B",
+      "court_complex_name":  "Family Court Pune",
+      "lcourt_complex_name": "कौटुंबिक न्यायालय पुणे"
+    }
+  ]
+}

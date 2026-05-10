@@ -1,0 +1,18 @@
+{
+  "$schema": "./cnrMapping.schema.json",
+  "version": "1.0.0",
+  "name": "ecourts.complexes.v1",
+  "description": "Refines /api/court/complexes into a clean array of court complexes.",
+  "fields": {
+    "complexes": {
+      "rule": "list",
+      "source": { "rule": "exact", "path": "complexes" },
+      "item": {
+        "code":          { "rule": "exact", "path": "complex_code", "transforms": ["trim", "nullIfEmpty"] },
+        "establishment": { "rule": "exact", "path": "njdg_est_code", "transforms": ["trim", "nullIfEmpty"] },
+        "name":          { "rule": "exact", "path": "court_complex_name", "transforms": ["trim", "nullIfEmpty"] },
+        "localName":     { "rule": "exact", "path": "lcourt_complex_name", "transforms": ["trim", "nullIfEmpty"] }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Nodes;
+using CourtMetaAPI.Filters;
 using CourtMetaAPI.Services;
 
 namespace CourtMetaAPI.Controllers;
@@ -27,7 +28,13 @@ public class CnrController : ControllerBase
 
     // ─── /cnr (back-compat) ──────────────────────────────────────────────────
     // GET /api/court/cnr?cino=MHPU010001232022
+    //
+    // Free tier: returns the raw history payload (today's behaviour).
+    // Paid tier (license carrying parse:cnr): the action filter wraps the
+    // response in { schemaVersion, parsed } using cnrMapping.json. See
+    // ParseableEndpointFilter for the lifecycle.
     [HttpGet]
+    [ParseableEndpoint("cnr")]
     public async Task<IActionResult> CnrSearch([FromQuery] string cino, CancellationToken ct)
     {
         if (!ValidateCino(cino, out var error))

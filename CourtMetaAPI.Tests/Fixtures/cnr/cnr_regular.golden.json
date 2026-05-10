@@ -1,0 +1,59 @@
+{
+  "cnrNumber": "MHPU010001232022",
+  "caseNumber": "CR/123/2022",
+  "petitioner": "Rajesh Kumar",
+  "respondant": "State of Maharashtra",
+  "petitionerAdvocate": "Adv. Sharma",
+  "respondantAdvocate": null,
+  "filing": {
+    "number": "445",
+    "year": "2022",
+    "date": "15/03/2022",
+    "act": ["IPC 302", "IPC 307", "Arms Act 25"]
+  },
+  "fir": {
+    "number": "FIR-2021/00789",
+    "policeStation": "Pune City Police Station",
+    "year": "2021"
+  },
+  "court": {
+    "number": "5",
+    "name": "Sessions Court Pune",
+    "district": "Pune",
+    "state": "Maharashtra"
+  },
+  "caseType": "Regular Case",
+  "judges": [
+    { "judgeCode": "J001", "designation": "Sessions Judge" },
+    { "judgeCode": "J002", "designation": "Additional Sessions Judge" }
+  ],
+  "additionalPetitioners": [
+    { "name": "Co-Petitioner One", "advocateName": "Adv One" },
+    { "name": "Co-Petitioner Two", "advocateName": "Adv Two" }
+  ],
+  "additionalRespondents": [
+    { "name": "Co-Respondent A", "advocateName": "Adv A" }
+  ],
+  "hearings": [
+    {
+      "courtNo": "5",
+      "judge": "Hon. Justice A",
+      "businessOnDate": "Charge framed",
+      "businessDate": "20/06/2022",
+      "hearingDate": "20/06/2022",
+      "purposeOfHearing": "Charge"
+    },
+    {
+      "courtNo": "5",
+      "judge": "Hon. Justice B",
+      "businessOnDate": "Adjourned",
+      "businessDate": "15/09/2022",
+      "hearingDate": "15/09/2022",
+      "purposeOfHearing": "Evidence"
+    }
+  ],
+  "transferHistory": [
+    { "date": "10/04/2022", "fromCourt": "JMFC Pune", "toCourt": "Sessions Pune" },
+    { "date": "15/08/2022", "fromCourt": "Sessions Pune", "toCourt": "High Court Bombay" }
+  ]
+}

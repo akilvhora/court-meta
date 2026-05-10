@@ -1,0 +1,143 @@
+{
+  "$schema": "./cnrMapping.schema.json",
+  "version": "1.7.0",
+  "name": "ecourts.cnr.v1",
+  "description": "Maps eCourts CNR API response to Court Meta refined JSON",
+  "root": "data",
+  "fields": {
+    "cnrNumber":  { "rule": "exact", "path": "cino" },
+    "caseNumber": { "rule": "exact", "path": "caseNumber" },
+    "petitioner": { "rule": "exact", "path": "history.pet_name", "transforms": ["trim", "nullIfEmpty"] },
+    "respondant": { "rule": "exact", "path": "history.res_name", "transforms": ["trim", "nullIfEmpty"] },
+    "petitionerAdvocate": { "rule": "exact", "path": "history.pet_adv", "transforms": ["trim", "nullIfEmpty"] },
+    "respondantAdvocate": { "rule": "exact", "path": "history.res_adv", "transforms": ["trim", "nullIfEmpty"] },
+    "filing.number": { "rule": "exact", "path": "history.fil_no" },
+    "filing.year":   { "rule": "exact", "path": "history.fil_year" },
+    "filing.date":   { "rule": "exact", "path": "history.date_of_filing", "transforms": [{ "fn": "toDate" }] },
+    "filing.act":    { "rule": "exact", "path": "history.act", "transforms": [{ "fn": "parseActTable" }] },
+    "fir":           { "rule": "exact", "path": "history.fir_details", "transforms": [{ "fn": "parseFirDetails" }] },
+
+    "court.number": {
+      "rule": "coalesce",
+      "sources": [
+        { "rule": "exact", "path": "history.courtno" },
+        { "rule": "exact", "path": "history.court_no" },
+        { "rule": "exact", "path": "history.court_number" }
+      ]
+    },
+    "court.name":     { "rule": "exact", "path": "history.court_name", "transforms": ["trim", "nullIfEmpty"] },
+    "court.district": { "rule": "exact", "path": "history.district_name", "transforms": ["trim", "nullIfEmpty"] },
+    "court.state":    { "rule": "exact", "path": "history.state_name", "transforms": ["trim", "nullIfEmpty"] },
+
+    "caseType": {
+      "rule": "switch",
+      "path": "type",
+      "cases": { "filing": "Filing Case" },
+      "default": "Regular Case"
+    },
+
+    "judges": {
+      "rule": "list",
+      "source": {
+        "rule": "findArray",
+        "keyPattern": "judge",
+        "rowKeyPattern": "judcode|desgname",
+        "maxDepth": 4
+      },
+      "item": {
+        "judgeCode":   { "rule": "exact", "path": "judcode" },
+        "designation": { "rule": "exact", "path": "desgname", "transforms": ["trim", "nullIfEmpty"] }
+      }
+    },
+
+    "additionalPetitioners": {
+      "rule": "exact",
+      "path": "history.str_error",
+      "transforms": [{ "fn": "parseAdvocateList" }]
+    },
+    "additionalRespondents": {
+      "rule": "exact",
+      "path": "history.str_error1",
+      "transforms": [{ "fn": "parseAdvocateList" }]
+    },
+
+    "hearings": {
+      "rule": "list",
+      "source": {
+        "rule": "findArray",
+        "keyPattern": "historyOfCaseHearing|hearr?ing",
+        "rowKeyPattern": "judge|Business|Hearing|Purpose|date|purpose",
+        "maxDepth": 4
+      },
+      "item": {
+        "courtNo": {
+          "rule": "coalesce",
+          "sources": [
+            { "rule": "exact",    "path": "court_no" },
+            { "rule": "exact",    "path": "courtno" },
+            { "rule": "regexKey", "pattern": "court.*no" }
+          ],
+          "transforms": ["trim", "nullIfEmpty"]
+        },
+        "judge": {
+          "rule": "regexKey",
+          "pattern": "judge",
+          "transforms": ["trim", "nullIfEmpty"]
+        },
+        "businessOnDate": {
+          "rule": "coalesce",
+          "sources": [
+            { "rule": "exact",    "path": "viewBusiness" },
+            { "rule": "regexKey", "pattern": "view.*business" },
+            { "rule": "regexKey", "pattern": "business.*on.*date" },
+            { "rule": "regexKey", "pattern": "business" }
+          ],
+          "transforms": ["trim", "nullIfEmpty"]
+        },
+        "businessDate": {
+          "rule": "exact",
+          "path": "businessDate",
+          "transforms": [{ "fn": "toDate" }]
+        },
+        "hearingDate": {
+          "rule": "coalesce",
+          "sources": [
+            { "rule": "regexKey", "pattern": "hearing.*date" },
+            { "rule": "regexKey", "pattern": "^(?!next).*(date|hearing)", "fallbackIndex": 0 }
+          ],
+          "transforms": [{ "fn": "toDate" }]
+        },
+        "purposeOfHearing": {
+          "rule": "coalesce",
+          "sources": [
+            { "rule": "regexKey", "pattern": "purpose.*hearing" },
+            { "rule": "regexKey", "pattern": "^(?!next).*purpose", "fallbackIndex": 1 }
+          ],
+          "transforms": ["trim", "nullIfEmpty"]
+        }
+      }
+    },
+
+    "transferHistory": {
+      "rule": "list",
+      "source": { "rule": "exact", "path": "history.transfer" },
+      "item": {
+        "date": {
+          "rule": "regexKey",
+          "pattern": "transfer.*date|^date$",
+          "transforms": [{ "fn": "toDate" }]
+        },
+        "fromCourt": {
+          "rule": "regexKey",
+          "pattern": "from.*court",
+          "transforms": ["trim", "nullIfEmpty"]
+        },
+        "toCourt": {
+          "rule": "regexKey",
+          "pattern": "to.*court",
+          "transforms": ["trim", "nullIfEmpty"]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "success": true,
+  "data": {
+    "cino": "MHPU010001232022",
+    "caseNumber": "CR/123/2022",
+    "type": "case",
+    "history": {
+      "pet_name": "  Rajesh Kumar  ",
+      "res_name": "State of Maharashtra",
+      "pet_adv": "Adv. Sharma",
+      "res_adv": "",
+      "fil_no": "445",
+      "fil_year": "2022",
+      "date_of_filing": "15-03-2022",
+      "act": "<table><tr><td>Section</td><td>IPC 302, IPC 307, Arms Act 25</td></tr></table>",
+      "fir_details": "FIR-2021/00789^Pune City Police Station^2021",
+      "courtno": "5",
+      "court_name": " Sessions Court Pune ",
+      "district_name": "Pune",
+      "state_name": "Maharashtra",
+      "str_error": "1) Co-Petitioner One Advocate - Adv One <br>2) Co-Petitioner Two Advocate - Adv Two",
+      "str_error1": "1) Co-Respondent A Advocate - Adv A",
+      "transfer": [
+        { "transferDate": "10-04-2022", "fromCourt": "JMFC Pune", "toCourt": "Sessions Pune" },
+        { "date": "2022-08-15",          "From Court": "Sessions Pune", "To Court": "High Court Bombay" }
+      ],
+      "historyOfCaseHearing": [
+        {
+          "court_no": "5",
+          "judge": "Hon. Justice A",
+          "viewBusiness": "Charge framed",
+          "businessDate": "20-06-2022",
+          "hearingDate": "20-06-2022",
+          "purposeOfHearing": "Charge"
+        },
+        {
+          "courtno": "5",
+          "Judge Name": "Hon. Justice B",
+          "businessOnDate": "Adjourned",
+          "businessDate": "15-09-2022",
+          "hearing date": "15-09-2022",
+          "purpose of hearing": "Evidence"
+        }
+      ]
+    },
+    "judges": [
+      { "judcode": "J001", "desgname": " Sessions Judge " },
+      { "judcode": "J002", "desgname": "Additional Sessions Judge" }
+    ]
+  }
+}

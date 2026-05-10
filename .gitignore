@@ -21,3 +21,11 @@ logs/
 
 # Extension private key — store in Jenkins as Secret File (ID: court-meta-extension-key)
 installer/extension-private-key.pem
+
+# License-signing private keys — issuer-only, never commit. Public counterparts
+# under CourtMetaAPI/Services/Licensing/Keys/ are tracked.
+tools/dev-keys/
+
+# Jenkins helper scratch output (create-job.ps1, verify-job.ps1, etc.)
+jenkins/_*.txt
+jenkins/_*.xml

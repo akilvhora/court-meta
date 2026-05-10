@@ -20,7 +20,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Tier-aware response shaper. Only acts on actions decorated with
+    // [ParseableEndpoint(...)] when the request carries a license that
+    // grants the matching scope; everyone else gets the raw passthrough.
+    options.Filters.AddService<CourtMetaAPI.Filters.ParseableEndpointFilter>();
+});
 
 // In-memory cache for quasi-static lookups (states, districts, complexes, case-types).
 // Cuts repeat upstream calls when the extension is opened multiple times.
@@ -35,6 +41,20 @@ builder.Services.AddSingleton<CourtMetaAPI.Services.HistoryParser>();
 builder.Services.AddSingleton<CourtMetaAPI.Services.CauseListParser>();
 builder.Services.AddScoped<CourtMetaAPI.Services.AdvocateSearchService>();
 builder.Services.AddSingleton<CourtMetaAPI.Services.TelemetryService>();
+
+// Mapping engine + embedded mapping configs (single source of truth shared
+// with the extension's JS engine). MappingConfigStore is a singleton because
+// configs are immutable per build.
+builder.Services.AddSingleton<CourtMetaAPI.Services.Mapping.MappingEngine>();
+builder.Services.AddSingleton<CourtMetaAPI.Services.Mapping.MappingConfigStore>();
+builder.Services.AddScoped<CourtMetaAPI.Filters.ParseableEndpointFilter>();
+
+// Licensing — public keys are embedded resources; loader reads the on-disk
+// JWT installed by the Inno Setup wizard. Validator is stateless so it's safe
+// as a singleton.
+builder.Services.AddSingleton<CourtMetaAPI.Services.Licensing.LicensePublicKeys>();
+builder.Services.AddSingleton<CourtMetaAPI.Services.Licensing.LicenseValidator>();
+builder.Services.AddSingleton<CourtMetaAPI.Services.Licensing.LicenseLoader>();
 
 // Register a named HttpClient for eCourts API
 builder.Services.AddHttpClient("eCourts", client =>
@@ -128,6 +148,10 @@ app.Use(async (context, next) =>
 
     await next();
 });
+
+// Resolve the per-request license state (header-supplied JWT preferred over
+// installed file) and stash it for downstream filters / token-status.
+app.UseMiddleware<CourtMetaAPI.Middleware.LicenseMiddleware>();
 
 app.UseCors();
 app.MapGet("/favicon.ico", () => Results.NoContent());

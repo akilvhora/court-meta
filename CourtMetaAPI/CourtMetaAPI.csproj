@@ -46,4 +46,35 @@
     <Message Text="Extension bundled from $(ExtensionSourceDir) → wwwroot/extension/ and wwwroot/court-meta-extension.zip" Importance="high" />
   </Target>
 
+  <!--
+    Mapping configs are the single contract between this engine and the
+    extension's JS engine. Copy them out of extension/mapping/ into the API
+    Services/Mapping/Configs/ directory at every build and embed them as
+    resources so they ship inside the single-file exe.
+  -->
+  <Target Name="BundleMappingConfigs" BeforeTargets="Build">
+    <ItemGroup>
+      <_MappingFiles Include="$(ExtensionSourceDir)\mapping\*.json" />
+    </ItemGroup>
+    <MakeDir Directories="$(MSBuildProjectDirectory)\Services\Mapping\Configs" />
+    <Copy SourceFiles="@(_MappingFiles)"
+          DestinationFolder="$(MSBuildProjectDirectory)\Services\Mapping\Configs"
+          SkipUnchangedFiles="true" />
+    <Message Text="Mapping configs bundled from $(ExtensionSourceDir)\mapping\ → Services/Mapping/Configs/" Importance="high" />
+  </Target>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Services\Mapping\Configs\*.json">
+      <LogicalName>CourtMetaAPI.Mapping.Configs.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <!--
+      License signing public keys, indexed by `kid`. Multiple keys may be
+      embedded simultaneously to support no-flag-day rotation: ship N+1 build
+      with both old and new pubkeys, drop the old one in build N+2.
+    -->
+    <EmbeddedResource Include="Services\Licensing\Keys\*.pub.pem">
+      <LogicalName>CourtMetaAPI.Licensing.Keys.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

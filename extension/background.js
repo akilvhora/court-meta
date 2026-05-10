@@ -6,10 +6,13 @@ import { applyMapping } from './mapping/mapper.js';
 
 const API_BASE = 'http://localhost:5000/api/court';
 
-// Lazy-loaded bundled mapping configs. Add new API configs by dropping a JSON
-// file in ./mapping/ and registering it here.
+// Lazy-loaded bundled mapping configs. The same JSON ships server-side as
+// embedded resources; on a paid tier the API returns a pre-parsed envelope
+// (`{ schemaVersion, parsed }`) and we skip the local engine. Local mapping
+// is the fallback for free tier and for older API binaries.
 const MAPPING_CONFIGS = {
-  cnrSearch: 'mapping/cnrMapping.json'
+  cnrSearch:      'mapping/cnrMapping.json',
+  fetchComplexes: 'mapping/complexesMapping.json'
 };
 const mappingCache = {};
 
@@ -314,8 +317,20 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       }
 
       const data = await res.json();
+
+      // Server-parsed envelope (paid tier): the API has already run the
+      // mapping config and returns { schemaVersion, parsed[, raw] }. Trust
+      // it and skip the local engine; this is the design's "single source
+      // of truth" — both engines consume the same JSON config, so the JS
+      // engine becomes a fallback for free-tier callers and for API binaries
+      // older than this extension.
       const mappingPromise = loadMapping(action);
-      if (mappingPromise) {
+      if (data && typeof data === 'object' && data.schemaVersion && 'parsed' in data) {
+        sendResponse({
+          success: true,
+          data: { parsed: data.parsed, raw: data.raw ?? null, schemaVersion: data.schemaVersion }
+        });
+      } else if (mappingPromise) {
         const config = await mappingPromise;
         const { result: parsed } = applyMapping(config, data);
         sendResponse({ success: true, data: { parsed, raw: data } });
