@@ -1,6 +1,6 @@
 {
   "$schema": "./cnrMapping.schema.json",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "name": "ecourts.cnr.v1",
   "description": "Maps eCourts CNR API response to Court Meta refined JSON",
   "root": "data",
@@ -137,6 +137,24 @@
           "pattern": "to.*court",
           "transforms": ["trim", "nullIfEmpty"]
         }
+      }
+    },
+
+    "finalOrder": {
+      "rule": "list",
+      "source": { "rule": "exact", "path": "finalOrder" },
+      "item": {
+        "order_id":       { "rule": "exact", "path": "order_id" },
+        "order_date1f":   { "rule": "exact", "path": "order_date1f" },
+        "order_details":  { "rule": "exact", "path": "order_details", "transforms": ["trim", "nullIfEmpty"] },
+        "filename":       { "rule": "exact", "path": "filename" },
+        "caseno":         { "rule": "exact", "path": "caseno" },
+        "cCode":          { "rule": "exact", "path": "cCode" },
+        "appFlag":        { "rule": "exact", "path": "appFlag" },
+        "state_cd":       { "rule": "exact", "path": "state_cd" },
+        "dist_cd":        { "rule": "exact", "path": "dist_cd" },
+        "court_code":     { "rule": "exact", "path": "court_code" },
+        "bilingual_flag": { "rule": "exact", "path": "bilingual_flag" }
       }
     }
   }
