@@ -1,6 +1,6 @@
 {
   "$schema": "./cnrMapping.schema.json",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "name": "ecourts.cnr.v1",
   "description": "Maps eCourts CNR API response to Court Meta refined JSON",
   "root": "data",
@@ -142,7 +142,7 @@
 
     "finalOrder": {
       "rule": "list",
-      "source": { "rule": "exact", "path": "finalOrder" },
+      "source": { "rule": "exact", "path": "history.finalOrder" },
       "item": {
         "order_id":       { "rule": "exact", "path": "order_id" },
         "order_date1f":   { "rule": "exact", "path": "order_date1f" },
