@@ -12,6 +12,7 @@ const API_BASE = 'http://localhost:5000/api/court';
 // is the fallback for free tier and for older API binaries.
 const MAPPING_CONFIGS = {
   cnrSearch:      'mapping/cnrMapping.json',
+  cnrBundle:      'mapping/cnrMapping.json',
   fetchComplexes: 'mapping/complexesMapping.json'
 };
 const mappingCache = {};
@@ -103,6 +104,18 @@ const ACTION_MAP = {
       order_id: p.order_id,
       crno: p.crno
     })
+  },
+
+  // ── Bulk order download — server walks the CNR's finalOrder / interimOrder
+  //    array and persists each PDF under %APPDATA%/ecourt/{CNR}/. Returns a
+  //    DownloadReport with per-item status; no bytes cross the wire.
+  getFinalOrders: {
+    path: '/cnr/orders/final',
+    buildParams: (p) => qs({ cino: p.cino })
+  },
+  getInterimOrders: {
+    path: '/cnr/orders/interim',
+    buildParams: (p) => qs({ cino: p.cino })
   },
 
   // ── Phase 3 — case / filing number search ───────────────────────────────
