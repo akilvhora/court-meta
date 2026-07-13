@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Court Meta – High Court Search</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <div>
+      <h1>Court Meta — High Court</h1>
+      <div class="subtitle">services_HC_4.0/ scope — CNR lookup &amp; order downloads</div>
+    </div>
+    <a href="index.html" style="color:white; text-decoration:none; font-size:13px; font-weight:600; padding:6px 12px; border:1px solid rgba(255,255,255,0.4); border-radius:6px;">← District Court</a>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-indicator checking" id="extIndicator"></div>
+    <span id="extStatus">Checking for Court Meta extension…</span>
+  </div>
+
+  <div class="container">
+
+    <!-- HC state + bench directory (informational; the CNR alone is enough to fetch history) -->
+    <div class="card">
+      <div class="section-label" style="font-size:12px; font-weight:600; color:#718096; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.4px;">
+        High Court directory
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="hcState">State / High Court</label>
+          <select id="hcState"><option value="">— Loading states… —</option></select>
+        </div>
+        <div class="form-group">
+          <label for="hcBench">Bench</label>
+          <select id="hcBench" disabled><option value="">— Select a state first —</option></select>
+        </div>
+      </div>
+      <div style="font-size:12px; color:#718096;">
+        Optional lookup — the CNR search below works without selecting a state or bench.
+      </div>
+    </div>
+
+    <!-- CNR search + order downloads (HC-scoped) -->
+    <div class="card" style="margin-top:16px;">
+      <div class="form-row">
+        <div class="form-group" style="max-width:420px;">
+          <label for="hcCnrNumber">CNR Number</label>
+          <input type="text" id="hcCnrNumber" placeholder="e.g. MHHC010001232022" maxlength="30" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="hcCnrSearchBtn">Search</button>
+      <button class="btn btn-secondary" id="hcFinalOrdersBtn"   style="margin-left:8px;">Download Final Orders</button>
+      <button class="btn btn-secondary" id="hcInterimOrdersBtn" style="margin-left:4px;">Download Interim Orders</button>
+
+      <div class="result-section">
+        <div class="alert alert-error" id="hcCnrError"></div>
+
+        <div id="hcOrdersReport" style="display:none; margin-top:12px; font-size:13px; color:#2d3748;"></div>
+
+        <div class="cnr-split" id="hcCnrSplit">
+          <div class="cnr-split-pane cnr-split-left">
+            <div class="cnr-pane-header">
+              <div class="cnr-pane-title">Parsed JSON</div>
+              <button type="button" class="copy-btn" data-copy-target="hcCnrParsed">
+                <svg class="copy-btn-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                  <path fill="currentColor" d="M5 1a2 2 0 0 0-2 2v1H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H5zm0 2h7v9h-1V6a2 2 0 0 0-2-2H5V3zM2 6h7v8H2V6z"/>
+                </svg>
+                <span class="copy-btn-label">Copy</span>
+              </button>
+            </div>
+            <pre id="hcCnrParsed" class="cnr-raw"></pre>
+          </div>
+
+          <div class="cnr-split-pane cnr-split-right">
+            <div class="cnr-pane-header">
+              <div class="cnr-pane-title">API Response (JSON)</div>
+              <button type="button" class="copy-btn" data-copy-target="hcCnrRaw">
+                <svg class="copy-btn-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                  <path fill="currentColor" d="M5 1a2 2 0 0 0-2 2v1H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H5zm0 2h7v9h-1V6a2 2 0 0 0-2-2H5V3zM2 6h7v8H2V6z"/>
+                </svg>
+                <span class="copy-btn-label">Copy</span>
+              </button>
+            </div>
+            <pre id="hcCnrRaw" class="cnr-raw"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <script src="court-meta.js"></script>
+  <script src="high-court.js"></script>
+</body>
+</html>

@@ -13,7 +13,10 @@
       <h1>Court Meta</h1>
       <div class="subtitle">eCourts India – Case Search Portal</div>
     </div>
-    <a href="how-to.html" style="color:white; text-decoration:none; font-size:13px; font-weight:600; padding:6px 12px; border:1px solid rgba(255,255,255,0.4); border-radius:6px;">How to Use →</a>
+    <div style="display:flex; gap:8px;">
+      <a href="high-court.html" style="color:white; text-decoration:none; font-size:13px; font-weight:600; padding:6px 12px; border:1px solid rgba(255,255,255,0.4); border-radius:6px;">High Court →</a>
+      <a href="how-to.html" style="color:white; text-decoration:none; font-size:13px; font-weight:600; padding:6px 12px; border:1px solid rgba(255,255,255,0.4); border-radius:6px;">How to Use →</a>
+    </div>
   </header>
 
   <div class="status-bar">
@@ -29,7 +32,7 @@
         <strong>Court Meta extension not installed</strong>
         <span>The extension is required to fetch eCourts data. Install it in 3 steps:</span>
         <ol>
-          <li>Download and unzip the extension: <a href="/court-meta-extension.zip" download class="install-link">court-meta-extension.zip</a></li>
+          <li>Download and unzip the extension: <a href="/court-meta-extension.zip" download class="install-link">Court Meta</a></li>
           <li>Open Chrome → <code>chrome://extensions</code> → enable <strong>Developer mode</strong></li>
           <li>Click <strong>Load unpacked</strong> and select the unzipped folder, then reload this page</li>
         </ol>
@@ -59,9 +62,13 @@
         </div>
       </div>
       <button class="btn btn-primary" id="cnrSearchBtn">Search</button>
+      <button class="btn btn-secondary" id="cnrFinalOrdersBtn" style="margin-left:8px;">Download Final Orders</button>
+      <button class="btn btn-secondary" id="cnrInterimOrdersBtn" style="margin-left:4px;">Download Interim Orders</button>
 
       <div class="result-section">
         <div class="alert alert-error" id="cnrError"></div>
+
+        <div id="cnrOrdersReport" style="display:none; margin-top:12px; font-size:13px; color:#2d3748;"></div>
 
         <div class="cnr-split" id="cnrSplit">
           <div class="cnr-split-pane cnr-split-left">

@@ -13,6 +13,8 @@ const API_BASE = 'http://localhost:5000/api/court';
 const MAPPING_CONFIGS = {
   cnrSearch:      'mapping/cnrMapping.json',
   cnrBundle:      'mapping/cnrMapping.json',
+  hcCnrSearch:    'mapping/cnrMapping.json',
+  hcCnrBundle:    'mapping/cnrMapping.json',
   fetchComplexes: 'mapping/complexesMapping.json'
 };
 const mappingCache = {};
@@ -117,6 +119,16 @@ const ACTION_MAP = {
     path: '/cnr/orders/interim',
     buildParams: (p) => qs({ cino: p.cino })
   },
+
+  // ── High Court scope (services_HC_4.0/) ─────────────────────────────────
+  // Base URL swap happens server-side (EcourtsScope.HC); the wire shape is
+  // identical to DC apart from the /hc/ path prefix.
+  fetchHcStates:      { path: '/hc/states',                buildParams: () => '' },
+  fetchHcBenches:     { path: '/hc/benches',               buildParams: (p) => qs({ state_code: p.state_code }) },
+  hcCnrSearch:        { path: '/hc/cnr',                   buildParams: (p) => qs({ cino: p.cino }) },
+  hcCnrBundle:        { path: '/hc/cnr/bundle',            buildParams: (p) => qs({ cino: p.cino }) },
+  hcGetFinalOrders:   { path: '/hc/cnr/orders/final',      buildParams: (p) => qs({ cino: p.cino }) },
+  hcGetInterimOrders: { path: '/hc/cnr/orders/interim',    buildParams: (p) => qs({ cino: p.cino }) },
 
   // ── Phase 3 — case / filing number search ───────────────────────────────
   fetchCaseTypes: {

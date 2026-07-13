@@ -202,6 +202,14 @@ const CourtMeta = (() => {
     cnrOrderPdf: ({ state_code, dist_code, court_code, orderYr, order_id, crno }) =>
       request('cnrOrderPdf', { state_code, dist_code, court_code, orderYr, order_id, crno }),
 
+    // Bulk-download every final / interim order PDF listed on a CNR. The API
+    // persists the files under %APPDATA%/ecourt/{CNR}/ and returns
+    //   { success, data: { cino, type, directory, total, downloaded,
+    //                      failed, skipped, results: [{ orderDetails, status,
+    //                      path, bytes, error }] } }
+    getFinalOrders:   (cino) => request('getFinalOrders',   { cino }),
+    getInterimOrders: (cino) => request('getInterimOrders', { cino }),
+
     // ── Phase 3 — case / filing number search ──────────────────────────────
     // Case-type dropdown for the selected court (cached server-side).
     fetchCaseTypes: ({ state_code, dist_code, court_code }) =>
@@ -253,6 +261,27 @@ const CourtMeta = (() => {
       delete payload.scope;
       delete payload.onProgress;
       return request('searchByAdvocateCourt', payload);
+    },
+
+    // ── High Court scope ──────────────────────────────────────────────────
+    // Same wire shape and mappings as the DC calls above; the API routes
+    // through services_HC_4.0/ via EcourtsScope.HC.
+    hc: {
+      // HC "states" — each entry represents a high court + registry.
+      fetchStates: () => request('fetchHcStates'),
+
+      // HC benches (what DC calls "districts") for a chosen state.
+      fetchBenches: (state_code) => request('fetchHcBenches', { state_code }),
+
+      // Raw HC case-history for a CNR.
+      cnrSearch: (cino) => request('hcCnrSearch', { cino }),
+
+      // Parsed HC CaseBundle for a CNR.
+      cnrBundle: (cino) => request('hcCnrBundle', { cino }),
+
+      // Bulk PDF download (same DownloadReport shape as the DC variants).
+      getFinalOrders:   (cino) => request('hcGetFinalOrders',   { cino }),
+      getInterimOrders: (cino) => request('hcGetInterimOrders', { cino })
     }
   };
 })();
