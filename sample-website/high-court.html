@@ -90,6 +90,113 @@
       </div>
     </div>
 
+    <!-- Batch case search (cause list / case-type / party / advocate) -->
+    <div class="card" style="margin-top:16px;">
+      <div class="section-label" style="font-size:12px; font-weight:600; color:#718096; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.4px;">
+        Batch case search
+      </div>
+      <div style="font-size:12px; color:#718096; margin-bottom:10px;">
+        Uses the state / bench selected above. Every mode returns a list of matching cases in one call.
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="hcBatchMode">Search mode</label>
+          <select id="hcBatchMode">
+            <option value="causeList">Cause list (by date)</option>
+            <option value="caseType">Case type + year</option>
+            <option value="party">Party name</option>
+            <option value="advocate">Advocate</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="hcBatchPending">Status</label>
+          <select id="hcBatchPending">
+            <option value="Both">Both</option>
+            <option value="Pending">Pending</option>
+            <option value="Disposed">Disposed</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Cause list fields -->
+      <div class="form-row hc-batch-form" data-mode="causeList">
+        <div class="form-group">
+          <label for="hcBatchDate">Date</label>
+          <input type="text" id="hcBatchDate" placeholder="dd-mm-yyyy or yyyy-mm-dd" />
+        </div>
+      </div>
+
+      <!-- Case type fields -->
+      <div class="form-row hc-batch-form" data-mode="caseType" style="display:none;">
+        <div class="form-group">
+          <label for="hcBatchCaseType">Case type code</label>
+          <input type="text" id="hcBatchCaseType" placeholder="e.g. 1 or WP" />
+        </div>
+        <div class="form-group">
+          <label for="hcBatchCaseYear">Year</label>
+          <input type="text" id="hcBatchCaseYear" placeholder="e.g. 2024" />
+        </div>
+      </div>
+
+      <!-- Party fields -->
+      <div class="form-row hc-batch-form" data-mode="party" style="display:none;">
+        <div class="form-group">
+          <label for="hcBatchPartyName">Party name</label>
+          <input type="text" id="hcBatchPartyName" placeholder="e.g. State of Maharashtra" />
+        </div>
+        <div class="form-group">
+          <label for="hcBatchPartyType">Side</label>
+          <select id="hcBatchPartyType">
+            <option value="petitioner">Petitioner</option>
+            <option value="respondent">Respondent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="hcBatchPartyYear">Year</label>
+          <input type="text" id="hcBatchPartyYear" placeholder="e.g. 2024" />
+        </div>
+      </div>
+
+      <!-- Advocate fields -->
+      <div class="form-row hc-batch-form" data-mode="advocate" style="display:none;">
+        <div class="form-group">
+          <label for="hcBatchAdvMode">Search by</label>
+          <select id="hcBatchAdvMode">
+            <option value="name">Advocate name</option>
+            <option value="barcode">Bar code</option>
+          </select>
+        </div>
+        <div class="form-group hc-batch-adv-name">
+          <label for="hcBatchAdvName">Advocate name</label>
+          <input type="text" id="hcBatchAdvName" placeholder="e.g. Jane Doe" />
+        </div>
+        <div class="form-group hc-batch-adv-barcode" style="display:none;">
+          <label for="hcBatchBarState">Bar state code</label>
+          <input type="text" id="hcBatchBarState" placeholder="e.g. 1" />
+        </div>
+        <div class="form-group hc-batch-adv-barcode" style="display:none;">
+          <label for="hcBatchBarCode">Bar code</label>
+          <input type="text" id="hcBatchBarCode" placeholder="e.g. MAH/12345/2010" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="hcBatchSearchBtn">Search</button>
+
+      <div class="result-section">
+        <div class="alert alert-error" id="hcBatchError"></div>
+        <div id="hcBatchResultsWrap" style="display:none; margin-top:16px;">
+          <div class="section-label" id="hcBatchResultsHeader" style="font-size:12px; font-weight:600; color:#718096; margin-bottom:8px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>CNR</th><th>Case</th><th>Type</th><th>Year</th><th>Parties</th><th>Court</th><th></th></tr></thead>
+              <tbody id="hcBatchResultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /container -->
 
   <script src="court-meta.js"></script>

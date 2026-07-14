@@ -281,7 +281,20 @@ const CourtMeta = (() => {
 
       // Bulk PDF download (same DownloadReport shape as the DC variants).
       getFinalOrders:   (cino) => request('hcGetFinalOrders',   { cino }),
-      getInterimOrders: (cino) => request('hcGetInterimOrders', { cino })
+      getInterimOrders: (cino) => request('hcGetInterimOrders', { cino }),
+
+      // ── Batch search (all four return { count, results, raw }) ────────
+      //   causeList({ state_code, bench_code, date, pendingDisposed? })
+      //   searchByCaseType({ state_code, bench_code, case_type, year, pendingDisposed? })
+      //   searchByParty({ state_code, bench_code, name, year, partyType?, pendingDisposed? })
+      //     partyType: 'petitioner' (default) | 'respondent'
+      //   searchByAdvocate({ state_code, bench_code, mode, advocateName?, barstatecode?, barcode?,
+      //                       pendingDisposed?, year?, date? })
+      //     mode: 'name' | 'barcode'
+      causeList: (p) => request('hcCauseList', p),
+      searchByCaseType: (p) => request('hcSearchByCaseType', p),
+      searchByParty: (p) => request('hcSearchByParty', p),
+      searchByAdvocate: (p) => request('hcSearchByAdvocate', p)
     }
   };
 })();

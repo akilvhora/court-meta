@@ -197,4 +197,135 @@
 
   el('hcFinalOrdersBtn')  .addEventListener('click', function () { runOrderDownload('final',   this); });
   el('hcInterimOrdersBtn').addEventListener('click', function () { runOrderDownload('interim', this); });
+
+  // ── Batch search (cause list / case-type / party / advocate) ─────────────
+  // Uses the state/bench selected in the directory at the top of the page.
+  const batchMode  = el('hcBatchMode');
+  const batchError = el('hcBatchError');
+  const batchBtn   = el('hcBatchSearchBtn');
+
+  batchMode.addEventListener('change', function () {
+    document.querySelectorAll('.hc-batch-form').forEach(row => {
+      row.style.display = (row.dataset.mode === this.value) ? '' : 'none';
+    });
+  });
+
+  // Advocate sub-mode toggle (name vs barcode)
+  el('hcBatchAdvMode').addEventListener('change', function () {
+    const showBarcode = this.value === 'barcode';
+    document.querySelectorAll('.hc-batch-adv-name').forEach(n => n.style.display = showBarcode ? 'none' : '');
+    document.querySelectorAll('.hc-batch-adv-barcode').forEach(n => n.style.display = showBarcode ? '' : 'none');
+  });
+
+  function requireBench() {
+    const state = el('hcState').value;
+    const bench = el('hcBench').value;
+    if (!state) { showAlert(batchError, 'Select a state above before searching.'); return null; }
+    if (!bench) { showAlert(batchError, 'Select a bench above before searching.'); return null; }
+    return { state_code: state, bench_code: bench };
+  }
+
+  function renderBatchResults(data) {
+    const wrap   = el('hcBatchResultsWrap');
+    const body   = el('hcBatchResultsBody');
+    const header = el('hcBatchResultsHeader');
+    const rows   = (data && data.results) || [];
+
+    if (!rows.length) {
+      header.textContent = '0 cases found';
+      body.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#718096; padding:20px;">No cases match this search.</td></tr>';
+      wrap.style.display = 'block';
+      return;
+    }
+
+    header.textContent = rows.length + ' case' + (rows.length === 1 ? '' : 's') + ' found';
+    body.innerHTML = rows.map((r, i) => {
+      const cino    = r.cino || '';
+      const caseNo  = r.case_no || r.case_no2 || '–';
+      const type    = r.type_name || '–';
+      const year    = r.reg_year || r.year || '–';
+      const parties = r.petnameadArr || r.parties || '–';
+      const court   = r.establishment_name || r.court_code || '–';
+      const action  = cino
+        ? '<button class="btn btn-secondary" data-cino="' + escapeHtml(cino) + '" data-jump="cnr">Open</button>'
+        : '<span style="color:#a0aec0; font-size:12px;">no CNR</span>';
+      return '<tr>' +
+        '<td>' + (i + 1) + '</td>' +
+        '<td><code style="font-size:12px;">' + escapeHtml(cino || '–') + '</code></td>' +
+        '<td>' + escapeHtml(caseNo) + '</td>' +
+        '<td>' + escapeHtml(type) + '</td>' +
+        '<td>' + escapeHtml(year) + '</td>' +
+        '<td>' + escapeHtml(parties) + '</td>' +
+        '<td>' + escapeHtml(court) + '</td>' +
+        '<td>' + action + '</td>' +
+      '</tr>';
+    }).join('');
+
+    body.querySelectorAll('button[data-jump="cnr"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        el('hcCnrNumber').value = btn.dataset.cino;
+        el('hcCnrSearchBtn').click();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+    wrap.style.display = 'block';
+  }
+
+  batchBtn.addEventListener('click', function () {
+    hideAlert(batchError);
+    el('hcBatchResultsWrap').style.display = 'none';
+    const ctx = requireBench();
+    if (!ctx) return;
+    const mode = batchMode.value;
+    const pending = el('hcBatchPending').value;
+    let call;
+
+    if (mode === 'causeList') {
+      const date = el('hcBatchDate').value.trim();
+      if (!date) { showAlert(batchError, 'Enter a date.'); return; }
+      call = CourtMeta.hc.causeList({ ...ctx, date, pendingDisposed: pending });
+
+    } else if (mode === 'caseType') {
+      const caseType = el('hcBatchCaseType').value.trim();
+      const year     = el('hcBatchCaseYear').value.trim();
+      if (!caseType) { showAlert(batchError, 'Enter a case type code.'); return; }
+      if (!/^\d{4}$/.test(year)) { showAlert(batchError, 'Year must be 4 digits.'); return; }
+      call = CourtMeta.hc.searchByCaseType({ ...ctx, case_type: caseType, year, pendingDisposed: pending });
+
+    } else if (mode === 'party') {
+      const name = el('hcBatchPartyName').value.trim();
+      const year = el('hcBatchPartyYear').value.trim();
+      const partyType = el('hcBatchPartyType').value;
+      if (!name) { showAlert(batchError, 'Enter a party name.'); return; }
+      if (!/^\d{4}$/.test(year)) { showAlert(batchError, 'Year must be 4 digits.'); return; }
+      call = CourtMeta.hc.searchByParty({ ...ctx, name, year, partyType, pendingDisposed: pending });
+
+    } else if (mode === 'advocate') {
+      const advMode = el('hcBatchAdvMode').value;
+      if (advMode === 'barcode') {
+        const bar   = el('hcBatchBarCode').value.trim();
+        const state = el('hcBatchBarState').value.trim();
+        if (!bar) { showAlert(batchError, 'Enter a bar code.'); return; }
+        call = CourtMeta.hc.searchByAdvocate({
+          ...ctx, mode: 'barcode', barcode: bar, barstatecode: state,
+          pendingDisposed: pending
+        });
+      } else {
+        const name = el('hcBatchAdvName').value.trim();
+        if (!name) { showAlert(batchError, 'Enter an advocate name.'); return; }
+        call = CourtMeta.hc.searchByAdvocate({
+          ...ctx, mode: 'name', advocateName: name, pendingDisposed: pending
+        });
+      }
+
+    } else {
+      showAlert(batchError, 'Unknown search mode.'); return;
+    }
+
+    setLoading(this, true);
+    call
+      .then(data => renderBatchResults(data))
+      .catch(err => showAlert(batchError, err.message))
+      .finally(() => setLoading(this, false));
+  });
 })();

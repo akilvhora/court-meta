@@ -130,6 +130,40 @@ const ACTION_MAP = {
   hcGetFinalOrders:   { path: '/hc/cnr/orders/final',      buildParams: (p) => qs({ cino: p.cino }) },
   hcGetInterimOrders: { path: '/hc/cnr/orders/interim',    buildParams: (p) => qs({ cino: p.cino }) },
 
+  // ── HC batch search — every case matching the filter on a single bench.
+  //    Server-side each hits the shared search endpoint on services_HC_4.0/.
+  hcCauseList: {
+    path: '/hc/cause-list',
+    buildParams: (p) => qs({
+      state_code: p.state_code, bench_code: p.bench_code, date: p.date,
+      pendingDisposed: p.pendingDisposed
+    })
+  },
+  hcSearchByCaseType: {
+    path: '/hc/search/case-type',
+    buildParams: (p) => qs({
+      state_code: p.state_code, bench_code: p.bench_code,
+      case_type: p.case_type, year: p.year, pendingDisposed: p.pendingDisposed
+    })
+  },
+  hcSearchByParty: {
+    path: '/hc/search/party',
+    buildParams: (p) => qs({
+      state_code: p.state_code, bench_code: p.bench_code,
+      name: p.name, year: p.year, partyType: p.partyType,
+      pendingDisposed: p.pendingDisposed
+    })
+  },
+  hcSearchByAdvocate: {
+    path: '/hc/search/advocate',
+    buildParams: (p) => qs({
+      state_code: p.state_code, bench_code: p.bench_code,
+      mode: p.mode, advocateName: p.advocateName,
+      barstatecode: p.barstatecode, barcode: p.barcode,
+      pendingDisposed: p.pendingDisposed, year: p.year, date: p.date
+    })
+  },
+
   // ── Phase 3 — case / filing number search ───────────────────────────────
   fetchCaseTypes: {
     path: '/case-types',
