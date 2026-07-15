@@ -273,6 +273,11 @@ const CourtMeta = (() => {
       // HC benches (what DC calls "districts") for a chosen state.
       fetchBenches: (state_code) => request('fetchHcBenches', { state_code }),
 
+      // Case-type catalog for a bench — returns [{ id, name }] once the
+      // upstream tilde/hash blob is flattened.
+      fetchCaseTypes: ({ state_code, bench_code }) =>
+        request('fetchHcCaseTypes', { state_code, bench_code }),
+
       // Raw HC case-history for a CNR.
       cnrSearch: (cino) => request('hcCnrSearch', { cino }),
 

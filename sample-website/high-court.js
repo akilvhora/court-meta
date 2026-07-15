@@ -119,7 +119,45 @@
         console.error('[CourtMeta HC] fetchBenches:', err);
         sBench.innerHTML = '<option value="">— Error loading benches —</option>';
       });
+    // Also clear the batch case-type dropdown since the bench changed.
+    resetCaseTypeSelect('— Select a bench first —');
   });
+
+  // ── Case-type dropdown for batch search ──────────────────────────────────
+  // Populated when a bench is selected; reused across state/bench changes.
+  const caseTypeSelect = el('hcBatchCaseType');
+
+  function resetCaseTypeSelect(placeholder) {
+    caseTypeSelect.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>';
+    caseTypeSelect.disabled = true;
+  }
+
+  function loadCaseTypesForBench() {
+    const state = el('hcState').value;
+    const bench = el('hcBench').value;
+    if (!state || !bench) {
+      resetCaseTypeSelect('— Select a bench first —');
+      return;
+    }
+    resetCaseTypeSelect('— Loading… —');
+    CourtMeta.hc.fetchCaseTypes({ state_code: state, bench_code: bench })
+      .then(resp => {
+        const types = pickList(resp, 'caseTypes');
+        if (!types.length) {
+          resetCaseTypeSelect('— No case types —');
+          return;
+        }
+        caseTypeSelect.innerHTML = '<option value="">— Select case type —</option>' +
+          types.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
+        caseTypeSelect.disabled = false;
+      })
+      .catch(err => {
+        console.error('[CourtMeta HC] fetchCaseTypes:', err);
+        resetCaseTypeSelect('— Error loading —');
+      });
+  }
+
+  el('hcBench').addEventListener('change', loadCaseTypesForBench);
 
   // ── CNR search ────────────────────────────────────────────────────────────
   const hcCnrError = el('hcCnrError');

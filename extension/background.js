@@ -125,6 +125,7 @@ const ACTION_MAP = {
   // identical to DC apart from the /hc/ path prefix.
   fetchHcStates:      { path: '/hc/states',                buildParams: () => '' },
   fetchHcBenches:     { path: '/hc/benches',               buildParams: (p) => qs({ state_code: p.state_code }) },
+  fetchHcCaseTypes:   { path: '/hc/case-types',            buildParams: (p) => qs({ state_code: p.state_code, bench_code: p.bench_code }) },
   hcCnrSearch:        { path: '/hc/cnr',                   buildParams: (p) => qs({ cino: p.cino }) },
   hcCnrBundle:        { path: '/hc/cnr/bundle',            buildParams: (p) => qs({ cino: p.cino }) },
   hcGetFinalOrders:   { path: '/hc/cnr/orders/final',      buildParams: (p) => qs({ cino: p.cino }) },
